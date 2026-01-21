@@ -22,9 +22,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-primary-500/20 transition-shadow">
-              <Zap className="w-6 h-6 text-dark-900" />
-            </div>
             <span className="text-xl font-heading font-bold text-primary-400">Impact-X</span>
           </Link>
 
