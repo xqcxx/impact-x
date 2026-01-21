@@ -4,6 +4,7 @@ import {
   bridgeUSDCToStacks, 
   getUSDCBalance, 
   validateBridgeAmount,
+  checkMintStatus,
   type BridgeResult 
 } from '../lib/bridge';
 
@@ -11,12 +12,14 @@ export type BridgeStatus =
   | 'idle' 
   | 'checking' 
   | 'approving' 
-  | 'depositing' 
+  | 'depositing'
+  | 'polling'
   | 'success' 
   | 'error';
 
 interface UseBridgeReturn {
   bridge: (amount: string, recipientStacksAddress: string) => Promise<BridgeResult | null>;
+  checkStatus: (hookData: string) => Promise<boolean>;
   status: BridgeStatus;
   error: string | null;
   txHash: string | null;
@@ -44,6 +47,13 @@ export function useBridge(): UseBridgeReturn {
     setTxHash(null);
   }, []);
 
+  const checkStatus = useCallback(async (hookData: string): Promise<boolean> => {
+    // Determine network based on current chain
+    const network = getNetwork() === 'sepolia' ? 'testnet' : 'mainnet';
+    const result = await checkMintStatus(hookData, network);
+    return result.success;
+  }, [chainId]);
+
   const bridge = useCallback(async (
     amount: string,
     recipientStacksAddress: string
@@ -65,15 +75,15 @@ export function useBridge(): UseBridgeReturn {
       const balance = await getUSDCBalance(address, publicClient, network);
       
       // Validate amount
-      const validation = validateBridgeAmount(amount, balance, network);
+      const validation = validateBridgeAmount(amount, balance);
       if (!validation.valid) {
         setError(validation.error || 'Invalid amount');
         setStatus('error');
         return null;
       }
 
-      // Start approval
-      setStatus('approving');
+      // Start bridge process (Approving + Depositing)
+      setStatus('approving'); // Assume approval might be needed
 
       const result = await bridgeUSDCToStacks({
         amount,
@@ -86,18 +96,19 @@ export function useBridge(): UseBridgeReturn {
       setStatus('depositing');
       setTxHash(result.depositTxHash);
 
-      // Wait for deposit confirmation
+      // Wait for Ethereum confirmation
       await publicClient.waitForTransactionReceipt({ 
         hash: result.depositTxHash 
       });
 
-      setStatus('success');
+      // Now we poll for Stacks minting
+      setStatus('polling');
+      
       return result;
 
     } catch (err: any) {
       console.error('Bridge error:', err);
       
-      // Parse common errors
       let errorMessage = 'Bridge failed';
       if (err.message?.includes('User rejected')) {
         errorMessage = 'Transaction rejected by user';
@@ -116,7 +127,8 @@ export function useBridge(): UseBridgeReturn {
   }, [walletClient, publicClient, address, chainId]);
 
   return { 
-    bridge, 
+    bridge,
+    checkStatus,
     status, 
     error, 
     txHash,

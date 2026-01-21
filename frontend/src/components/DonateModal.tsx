@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock } from 'lucide-react';
+import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from 'lucide-react';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { donate } from '../lib/stacks';
+import { BridgeModal } from './BridgeModal';
 
 interface DonateModalProps {
   isOpen: boolean;
@@ -24,6 +25,9 @@ export function DonateModal({
   const [success, setSuccess] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
   
+  // Bridge Modal State
+  const [showBridge, setShowBridge] = useState(false);
+  
   const { connected: stxConnected, connect: connectStx, stxAddress } = useStacksWallet();
 
   // Reset when modal closes
@@ -34,6 +38,7 @@ export function DonateModal({
       setSuccess(false);
       setTxId(null);
       setDonating(false);
+      setShowBridge(false);
     }
   }, [isOpen]);
 
@@ -74,6 +79,25 @@ export function DonateModal({
       onClose();
     }
   };
+
+  const openBridge = () => {
+    setShowBridge(true);
+  };
+
+  // If showing bridge, render BridgeModal instead
+  if (showBridge) {
+    return (
+      <BridgeModal 
+        isOpen={true} 
+        onClose={() => setShowBridge(false)} 
+        defaultAmount={amount}
+        onSuccess={() => {
+          setShowBridge(false);
+          // Optional: Auto-fill amount or show success message
+        }}
+      />
+    );
+  }
 
   if (!isOpen) return null;
 
@@ -155,26 +179,32 @@ export function DonateModal({
                   <p className="text-dark-300 mb-6">
                     Connect your Stacks wallet to donate USDCx
                   </p>
-                  <button onClick={connectStx} className="btn-primary">
+                  <button onClick={connectStx} className="btn-primary w-full mb-4">
                     Connect Stacks Wallet
                   </button>
-                  <p className="text-xs text-dark-500 mt-4">
-                    Need USDCx? Bridge USDC from Ethereum using{' '}
-                    <a 
-                      href="https://docs.stacks.co/more-guides/bridging-usdcx" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary-400 hover:underline"
-                    >
-                      Circle's xReserve
-                    </a>
-                  </p>
+                  
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-white/10"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-dark-900 px-2 text-dark-500">OR</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={openBridge}
+                    className="w-full btn-secondary flex items-center justify-center gap-2 mt-4"
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                    Bridge USDC from Ethereum
+                  </button>
                 </div>
               ) : (
                 /* Donation Form */
                 <>
                   {/* Connected Wallet */}
-                  <div className="mb-4 p-3 rounded-xl bg-success-500/10 border border-success-500/30">
+                  <div className="mb-4 p-3 rounded-xl bg-success-500/10 border border-success-500/30 flex items-center justify-between">
                     <p className="text-xs text-success-400">
                       Connected: <span className="font-mono">{stxAddress?.slice(0, 8)}...{stxAddress?.slice(-4)}</span>
                     </p>
@@ -182,9 +212,19 @@ export function DonateModal({
 
                   {/* Amount Input */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-dark-300 mb-2">
-                      Donation Amount (USDCx)
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-dark-300">
+                        Donation Amount (USDCx)
+                      </label>
+                      <button 
+                        onClick={openBridge}
+                        className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+                      >
+                        <ArrowRightLeft className="w-3 h-3" />
+                        Need USDCx? Bridge
+                      </button>
+                    </div>
+                    
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 text-lg">$</span>
                       <input
