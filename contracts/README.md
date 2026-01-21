@@ -22,6 +22,17 @@ Escrow-based crowdfunding contract with USDCx integration.
 ### campaign-registry.clar (Legacy)
 Original contract with manual deposit registration. **Do not use** - has fraud vulnerability.
 
+## Clarity Version
+
+**Current Configuration:** Clarity 3 with Epoch 3.0
+
+**Note:** Clarity 4 is available on Stacks mainnet (activated at Bitcoin block 923222). 
+To upgrade to Clarity 4:
+1. Update `clarity_version = 4` in `Clarinet.toml`
+2. Update `epoch` to a compatible version (e.g., `3.0` or higher)
+3. Run `clarinet check` to validate
+4. Re-run deployment
+
 ## Development
 
 ### Prerequisites

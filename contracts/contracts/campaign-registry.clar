@@ -1,5 +1,5 @@
 ;; Impact-X Campaign Registry V1 (DEPRECATED)
-;; ⚠️ This contract is deprecated. Use campaign-registry-v2.clar for new deployments.
+;; WARNING: This contract is deprecated. Use campaign-registry-v2.clar for new deployments.
 ;; V1 lacks true escrow (uses optimistic register-deposit pattern)
 ;; V2 implements proper SIP-010 token transfers with automatic refunds
 ;; 
