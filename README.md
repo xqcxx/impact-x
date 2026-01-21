@@ -9,7 +9,7 @@ Impact-X is a decentralized crowdfunding platform that bridges the gap between E
 - **Dual Wallet Support**: Connect both Stacks (Leather/Xverse) and Ethereum (MetaMask/Rainbow/etc.) wallets
 - **Cross-Chain Donations**: Donate USDC from Ethereum, receive USDCx on Stacks (~15 min bridge time)
 - **Clarity Smart Contracts**: Campaign data stored on Stacks blockchain with IPFS metadata
-- **2% Platform Fee**: Only charged on successfully funded campaigns
+- **5% Platform Fee**: Only charged on successfully funded campaigns
 - **Modern UI**: Glassmorphism design with warm color palette
 
 ## Quick Start
@@ -132,16 +132,26 @@ Ethereum USDC → Circle xReserve → Stacks USDCx
 
 ## Smart Contract
 
-The `campaign-registry.clar` contract provides:
+**Active Contract**: `campaign-registry-v2.clar` (V2 with true escrow)
+
+The V2 contract provides enhanced features over V1:
+- True SIP-010 token escrow (funds held in contract, not manual registration)
+- Automatic refunds for failed campaigns
+- Improved donation tracking
+
+### Contract Functions
 
 | Function | Description |
 |----------|-------------|
 | `create-campaign` | Create a new fundraising campaign |
-| `register-deposit` | Register bridged donations (called by creator) |
-| `claim-funds` | Withdraw funds when goal is met (2% fee) |
+| `donate` | Deposit USDCx tokens into campaign escrow |
+| `claim-funds` | Withdraw funds when goal is met (5% fee deducted) |
+| `request-refund` | Claim refund if campaign failed (goal not met after deadline) |
 | `get-campaign` | Read campaign details |
 | `get-campaign-count` | Get total number of campaigns |
 | `get-backer-count` | Get number of backers for a campaign |
+
+**Note**: `campaign-registry.clar` (V1) is deprecated. V1 used an optimistic "register-deposit" pattern instead of true escrow.
 
 ## Tech Stack
 
