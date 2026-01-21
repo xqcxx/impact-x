@@ -27,7 +27,7 @@ Impact-X is a "Kickstarter" where the backend is a cross-chain bridge.
 ## 5. Product Potential
 *   **Launchpad:** This can evolve into a launchpad for Stacks Tokens (ICOs) where users buy in with Eth-USDC.
 *   **Grants:** Stacks Foundation or other DAOs can use this to accept cross-chain grant matching.
-*   **Revenue:** Impact-X takes a **2% Success Fee** on fully funded campaigns.
+*   **Revenue:** Impact-X takes a **5% Success Fee** on fully funded campaigns.
 
 ## 6. Technical Stack
 *   **Frontend:** Vite + React.
