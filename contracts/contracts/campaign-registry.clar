@@ -1,4 +1,8 @@
-;; Impact-X Campaign Registry
+;; Impact-X Campaign Registry V1 (DEPRECATED)
+;; ⚠️ This contract is deprecated. Use campaign-registry-v2.clar for new deployments.
+;; V1 lacks true escrow (uses optimistic register-deposit pattern)
+;; V2 implements proper SIP-010 token transfers with automatic refunds
+;; 
 ;; A cross-chain crowdfunding platform for the Bitcoin economy
 ;; Stores campaigns with IPFS metadata hashes and tracks funding progress
 
@@ -16,8 +20,8 @@
 (define-constant ERR_INVALID_AMOUNT (err u106))
 (define-constant ERR_UNAUTHORIZED (err u107))
 
-;; Platform fee: 2% (200 basis points)
-(define-constant PLATFORM_FEE_BPS u200)
+;; Platform fee: 5% (500 basis points)
+(define-constant PLATFORM_FEE_BPS u500)
 (define-constant BPS_DENOMINATOR u10000)
 
 ;; ============================================
