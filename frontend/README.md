@@ -1,11 +1,48 @@
-# React + TypeScript + Vite
+# Impact-X Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Cross-chain crowdfunding platform frontend built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Campaign Creation**: Create campaigns with rich text stories and IPFS metadata storage
+- **Dual Wallet Support**: Connect with Ethereum (RainbowKit) and Stacks wallets
+- **Escrow Donations**: Secure USDCx donations held in smart contract escrow
+- **Campaign Discovery**: Browse, search, and filter campaigns by category
+- **My Campaigns**: Dashboard for campaign creators to manage and claim funds
+
+## Tech Stack
+
+- React 19.2 + TypeScript
+- Vite 7.3 (Build tool)
+- TailwindCSS (Styling with Glassmorphism)
+- TipTap (Rich text editor)
+- Stacks.js (Blockchain integration)
+- RainbowKit (Ethereum wallets)
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_id
+VITE_PINATA_JWT=your_pinata_jwt
+VITE_NETWORK=testnet
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+Built application will be in `dist/` folder.
 
 ## React Compiler
 
