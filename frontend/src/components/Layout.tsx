@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { WalletConnect } from './WalletConnect';
-import { Zap, Home, PlusCircle, User, Menu, X } from 'lucide-react';
+import { Zap, Search, PlusCircle, User, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -8,7 +8,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { path: '/', label: 'Campaigns', icon: Home },
+    { path: '/explore', label: 'Explore', icon: Search },
     { path: '/create', label: 'Create', icon: PlusCircle },
     { path: '/my-campaigns', label: 'My Campaigns', icon: User },
   ];
