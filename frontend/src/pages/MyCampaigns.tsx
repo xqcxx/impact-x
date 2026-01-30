@@ -11,10 +11,13 @@ import {
   Wallet,
   ArrowRight,
   RefreshCw,
-  Loader2
+  Loader2,
+  Edit,
 } from 'lucide-react';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { ProgressBar } from '../components/ProgressBar';
+import { EditCampaignModal } from '../components/EditCampaignModal';
+import { CampaignCardSkeleton } from '../components/Skeleton';
 import { getCampaignsByOwner, type FullCampaign } from '../lib/campaigns';
 import { claimFunds } from '../lib/stacks';
 
@@ -23,6 +26,7 @@ export function MyCampaignsPage() {
   const [campaigns, setCampaigns] = useState<FullCampaign[]>([]);
   const [loading, setLoading] = useState(false);
   const [claimingId, setClaimingId] = useState<number | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<FullCampaign | null>(null);
 
   // Load campaigns when connected
   useEffect(() => {
@@ -83,11 +87,11 @@ export function MyCampaignsPage() {
   const activeCampaigns = campaigns.filter(c => c.daysLeft > 0).length;
 
   return (
-    <div className="space-y-8 animate-in">
+    <div className="space-y-8 animate-in max-w-7xl mx-auto px-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-dark-100">My Campaigns</h1>
+          <h1 className="text-3xl font-heading font-bold text-dark-100">My Campaigns</h1>
           <p className="text-dark-400">
             Manage your crowdfunding campaigns
           </p>
@@ -110,7 +114,7 @@ export function MyCampaignsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-primary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary-500/15">
               <TrendingUp className="w-5 h-5 text-primary-400" />
@@ -123,7 +127,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-success-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-success-500/15">
               <DollarSign className="w-5 h-5 text-success-400" />
@@ -136,7 +140,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-secondary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-secondary-500/15">
               <Users className="w-5 h-5 text-secondary-400" />
@@ -149,7 +153,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-primary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary-500/15">
               <Clock className="w-5 h-5 text-primary-300" />
@@ -168,20 +172,20 @@ export function MyCampaignsPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="glass-card p-6 animate-pulse">
+            <div key={i} className="glass-card p-6 animate-pulse border-white/5">
               <div className="flex gap-6">
-                <div className="w-56 h-32 bg-dark-700 rounded-lg" />
+                <div className="w-56 h-32 bg-white/5 rounded-lg" />
                 <div className="flex-1 space-y-4">
-                  <div className="h-5 bg-dark-700 rounded w-1/2" />
-                  <div className="h-3 bg-dark-700 rounded w-full" />
-                  <div className="h-2 bg-dark-700 rounded w-full" />
+                  <div className="h-5 bg-white/5 rounded w-1/2" />
+                  <div className="h-3 bg-white/5 rounded w-full" />
+                  <div className="h-2 bg-white/5 rounded w-full" />
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="glass-card p-12 text-center">
+        <div className="glass-card p-12 text-center border-white/5">
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/5 flex items-center justify-center">
             <Plus className="w-10 h-10 text-dark-500" />
           </div>
@@ -205,7 +209,7 @@ export function MyCampaignsPage() {
             return (
               <div
                 key={campaign.id}
-                className="glass-card overflow-hidden"
+                className="glass-card overflow-hidden hover:border-white/10 transition-colors"
               >
                 <div className="flex flex-col md:flex-row">
                   {/* Image */}
@@ -215,7 +219,7 @@ export function MyCampaignsPage() {
                       alt={campaign.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-dark-800/50 hidden md:block" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-dark-900/80 hidden md:block" />
                   </div>
 
                   {/* Content */}
@@ -223,7 +227,7 @@ export function MyCampaignsPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-heading font-semibold text-dark-100">
+                          <h3 className="font-heading font-semibold text-dark-100 text-lg">
                             {campaign.title}
                           </h3>
                           {isComplete && (
@@ -284,6 +288,16 @@ export function MyCampaignsPage() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2">
+                        {!campaign.claimed && (
+                          <button
+                            onClick={() => setEditingCampaign(campaign)}
+                            className="btn-secondary py-2 text-sm flex items-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </button>
+                        )}
+                        
                         {canClaim && (
                           <button 
                             onClick={() => handleClaim(campaign.id)}
@@ -337,6 +351,19 @@ export function MyCampaignsPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingCampaign && (
+        <EditCampaignModal
+          isOpen={!!editingCampaign}
+          onClose={() => setEditingCampaign(null)}
+          campaign={editingCampaign}
+          onSuccess={() => {
+            setEditingCampaign(null);
+            loadCampaigns();
+          }}
+        />
+      )}
     </div>
   );
 }
