@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CampaignCard, type Campaign } from '../components/CampaignCard';
+import { CampaignCardSkeleton } from '../components/Skeleton';
 import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
 import { CAMPAIGN_CATEGORIES } from '../lib/ipfs';
 import { getAllCampaigns, filterCampaigns, type FullCampaign } from '../lib/campaigns';
@@ -108,18 +109,7 @@ export function ExplorePage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="glass-card overflow-hidden animate-pulse border-white/5">
-              <div className="h-56 bg-dark-800" />
-              <div className="p-6 space-y-4">
-                <div className="h-6 bg-dark-800 rounded w-3/4" />
-                <div className="h-4 bg-dark-800 rounded w-full" />
-                <div className="h-4 bg-dark-800 rounded w-2/3" />
-                <div className="pt-4 flex justify-between">
-                  <div className="h-8 bg-dark-800 rounded w-20" />
-                  <div className="h-8 bg-dark-800 rounded w-20" />
-                </div>
-              </div>
-            </div>
+            <CampaignCardSkeleton key={i} />
           ))}
         </div>
       ) : error ? (
