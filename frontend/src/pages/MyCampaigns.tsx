@@ -114,7 +114,7 @@ export function MyCampaignsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-primary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary-500/15">
               <TrendingUp className="w-5 h-5 text-primary-400" />
@@ -127,7 +127,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-success-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-success-500/15">
               <DollarSign className="w-5 h-5 text-success-400" />
@@ -140,7 +140,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-secondary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-secondary-500/15">
               <Users className="w-5 h-5 text-secondary-400" />
@@ -153,7 +153,7 @@ export function MyCampaignsPage() {
             </div>
           </div>
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 hover:border-primary-500/30 transition-all hover:-translate-y-1">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary-500/15">
               <Clock className="w-5 h-5 text-primary-300" />
