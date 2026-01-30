@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { 
   Upload, 
   DollarSign, 
@@ -62,9 +63,16 @@ export function CreatePage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+        toast.success('Image uploaded successfully');
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -72,15 +80,21 @@ export function CreatePage() {
   const validateStep = (step: FormStep): boolean => {
     if (step === 'details') {
       if (!title.trim()) {
-        setError('Please enter a campaign title');
+        const msg = 'Please enter a campaign title';
+        setError(msg);
+        toast.error(msg);
         return false;
       }
       if (!description.trim()) {
-        setError('Please enter a description');
+        const msg = 'Please enter a description';
+        setError(msg);
+        toast.error(msg);
         return false;
       }
       if (!goal || parseFloat(goal) < 100) {
-        setError('Goal must be at least $100');
+        const msg = 'Goal must be at least $100';
+        setError(msg);
+        toast.error(msg);
         return false;
       }
     }
@@ -88,7 +102,9 @@ export function CreatePage() {
       // Strip HTML tags to check actual text content
       const textContent = story.replace(/<[^>]*>/g, '').trim();
       if (!textContent || textContent.length < 100) {
-        setError('Please write a story (at least 100 characters of actual content)');
+        const msg = 'Please write a story (at least 100 characters)';
+        setError(msg);
+        toast.error(msg);
         return false;
       }
     }
@@ -110,17 +126,19 @@ export function CreatePage() {
 
   const handleSubmit = async () => {
     if (!connected || !stxAddress) {
-      setError('Please connect your Stacks wallet first');
+      toast.error('Please connect your Stacks wallet first');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
+      const toastId = toast.loading('Creating your campaign...');
 
       // Upload image if provided
       let imageUrl = 'https://via.placeholder.com/800x400?text=Campaign';
       if (imageFile) {
+        toast.loading('Uploading image to IPFS...', { id: toastId });
         imageUrl = await uploadImageToIPFS(imageFile);
       }
 
@@ -136,10 +154,12 @@ export function CreatePage() {
       };
 
       // Upload to IPFS
+      toast.loading('Uploading metadata to IPFS...', { id: toastId });
       const ipfsHash = await uploadToIPFS(metadata);
       console.log('Uploaded to IPFS:', ipfsHash);
 
       // Create campaign on-chain
+      toast.loading('Confirming transaction on wallet...', { id: toastId });
       const result = await createCampaign(
         ipfsHash,
         parseFloat(goal),
@@ -147,6 +167,7 @@ export function CreatePage() {
       );
 
       console.log('Campaign created:', result);
+      toast.success('Campaign created successfully!', { id: toastId });
       setSuccess(true);
 
       // Redirect after success
@@ -156,7 +177,10 @@ export function CreatePage() {
 
     } catch (err: any) {
       console.error('Failed to create campaign:', err);
-      setError(err.message || 'Failed to create campaign');
+      const msg = err.message || 'Failed to create campaign';
+      setError(msg);
+      toast.error(msg);
+      toast.dismiss();
     } finally {
       setLoading(false);
     }

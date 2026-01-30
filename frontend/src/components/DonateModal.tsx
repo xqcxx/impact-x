@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from 'lucide-react';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { donate } from '../lib/stacks';
@@ -42,19 +44,50 @@ export function DonateModal({
     }
   }, [isOpen]);
 
+  const triggerConfetti = () => {
+    const end = Date.now() + 2000;
+    const colors = ['#FF6B1A', '#FF8A4C', '#ffffff'];
+
+    (function frame() {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: colors
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: colors
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  };
+
   const handleDonate = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      setError('Please enter a valid amount');
+      const msg = 'Please enter a valid amount';
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     if (!stxConnected || !stxAddress) {
-      setError('Please connect your Stacks wallet');
+      const msg = 'Please connect your Stacks wallet';
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     setDonating(true);
     setError(null);
+    const toastId = toast.loading('Processing donation...');
 
     try {
       // Call donate function - this transfers USDCx from user's wallet to contract escrow
@@ -62,13 +95,17 @@ export function DonateModal({
       
       setTxId(result.txId);
       setSuccess(true);
+      toast.success('Donation successful!', { id: toastId });
+      triggerConfetti();
       
       setTimeout(() => {
         onSuccess?.();
-      }, 2000);
+      }, 3000);
     } catch (err: any) {
       console.error('Donation failed:', err);
-      setError(err.message || 'Failed to donate. Make sure you have enough USDCx in your Stacks wallet.');
+      const msg = err.message || 'Failed to donate. Make sure you have enough USDCx.';
+      setError(msg);
+      toast.error(msg, { id: toastId });
     } finally {
       setDonating(false);
     }
