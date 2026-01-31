@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CampaignCard, type Campaign } from '../components/CampaignCard';
 import { CampaignCardSkeleton } from '../components/Skeleton';
@@ -16,9 +16,9 @@ export function ExplorePage() {
   // Fetch campaigns on mount
   useEffect(() => {
     loadCampaigns();
-  }, []);
+  }, [loadCampaigns]);
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -30,7 +30,7 @@ export function ExplorePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Filter campaigns
   const filteredCampaigns = filterCampaigns(campaigns, {
