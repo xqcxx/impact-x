@@ -402,6 +402,36 @@
   )
 )
 
+;; Cancel campaign (only owner, only if no donations)
+(define-public (cancel-campaign (campaign-id uint))
+  (let (
+    (campaign (unwrap! (map-get? campaigns { id: campaign-id }) ERR_CAMPAIGN_NOT_FOUND))
+    (backer-data (get-backer-count campaign-id))
+  )
+    ;; Validations
+    (asserts! (is-eq tx-sender (get owner campaign)) ERR_NOT_OWNER)
+    (asserts! (is-eq (get count backer-data) u0) ERR_UNAUTHORIZED)
+    (asserts! (not (get claimed campaign)) ERR_ALREADY_CLAIMED)
+    (asserts! (<= stacks-block-height (get deadline campaign)) ERR_CAMPAIGN_EXPIRED)
+    
+    ;; Mark as expired (by setting deadline to current block)
+    (map-set campaigns { id: campaign-id }
+      (merge campaign { 
+        deadline: stacks-block-height,
+        refund-enabled: false
+      })
+    )
+    
+    (print { 
+      event: "campaign-cancelled", 
+      campaign-id: campaign-id,
+      owner: tx-sender
+    })
+    
+    (ok true)
+  )
+)
+
 ;; ============================================
 ;; Admin Functions
 ;; ============================================
