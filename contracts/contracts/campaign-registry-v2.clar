@@ -1,6 +1,27 @@
 ;; Impact-X Campaign Registry V2
 ;; Cross-chain crowdfunding platform with USDCx escrow
 ;; Features: Trustless deposits, automatic refunds, milestone tracking
+;; 
+;; This contract manages fundraising campaigns on Stacks blockchain with the following features:
+;; - Campaign creation with customizable goals and deadlines
+;; - USDCx token escrow for secure donation holding
+;; - 5% platform fee on successful campaigns
+;; - Automatic refund mechanism for failed campaigns
+;; - Emergency pause functionality for security
+;; - Comprehensive status tracking and analytics
+;;
+;; Architecture:
+;; - Uses SIP-010 trait for USDCx token interactions
+;; - Escrow pattern: all donations held in contract until claimed or refunded
+;; - Immutable campaign records with updatable metadata
+;; - Event logging for all major state changes
+;;
+;; Security Considerations:
+;; - Only campaign owners can claim funds when goal is met
+;; - Refunds only available after deadline if goal not met
+;; - Contract owner can pause in emergencies
+;; - No reentrancy vulnerabilities (Clarity safety)
+;; - No integer overflow (Clarity safety with uint)
 
 ;; ============================================
 ;; Traits
