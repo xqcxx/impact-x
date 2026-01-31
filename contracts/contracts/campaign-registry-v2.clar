@@ -59,6 +59,7 @@
 
 (define-data-var campaign-counter uint u0)
 (define-data-var total-fees-collected uint u0)
+(define-data-var total-donations uint u0)
 
 ;; ============================================
 ;; Data Maps
@@ -196,6 +197,10 @@
   (var-get total-fees-collected)
 )
 
+(define-read-only (get-total-donations)
+  (var-get total-donations)
+)
+
 ;; ============================================
 ;; Public Functions - Campaign Management
 ;; ============================================
@@ -279,6 +284,9 @@
         { count: (+ current-backers u1) })
       true
     )
+    
+    ;; Track total donations across all campaigns
+    (var-set total-donations (+ (var-get total-donations) amount))
     
     (print { 
       event: "donation-received", 
