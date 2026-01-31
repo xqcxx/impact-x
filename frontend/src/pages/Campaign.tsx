@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import { 
   ArrowLeft, 
   Share2, 
-  Heart, 
   Clock, 
   Users, 
   ExternalLink,
@@ -13,7 +12,8 @@ import {
   DollarSign,
   Loader2,
   ArrowDownCircle,
-  Twitter
+  Twitter,
+  Lock
 } from 'lucide-react';
 import { ProgressBar } from '../components/ProgressBar';
 import { DonateModal } from '../components/DonateModal';
