@@ -1,0 +1,16 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running pre-commit checks..."
+
+# Run lint-staged
+npx lint-staged
+
+# Run contract checks
+cd contracts && clarinet check
+if [ $? -ne 0 ]; then
+  echo "Contract check failed!"
+  exit 1
+fi
+
+echo "Pre-commit checks passed!"
