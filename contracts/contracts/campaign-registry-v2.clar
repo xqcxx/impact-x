@@ -38,6 +38,7 @@
 (define-constant ERR_GOAL_ALREADY_MET (err u111))
 (define-constant ERR_CAMPAIGN_CANCELLED (err u112))
 (define-constant ERR_NOT_CANCELLED (err u113))
+(define-constant ERR_CONTRACT_PAUSED (err u114))
 
 ;; Campaign status constants
 (define-constant STATUS_ACTIVE u0)
@@ -60,6 +61,7 @@
 (define-data-var campaign-counter uint u0)
 (define-data-var total-fees-collected uint u0)
 (define-data-var total-donations uint u0)
+(define-data-var contract-paused bool false)
 
 ;; ============================================
 ;; Data Maps
@@ -199,6 +201,15 @@
 
 (define-read-only (get-total-donations)
   (var-get total-donations)
+)
+
+(define-read-only (is-contract-paused)
+  (var-get contract-paused)
+)
+
+;; Check if contract is not paused (for use in asserts!)
+(define-private (check-not-paused)
+  (ok (asserts! (not (var-get contract-paused)) ERR_CONTRACT_PAUSED))
 )
 
 ;; ============================================
@@ -460,5 +471,25 @@
     (print { event: "fees-withdrawn", amount: fees, recipient: tx-sender })
     
     (ok fees)
+  )
+)
+
+;; Emergency pause contract (only owner)
+(define-public (pause-contract)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (var-set contract-paused true)
+    (print { event: "contract-paused", by: tx-sender })
+    (ok true)
+  )
+)
+
+;; Unpause contract (only owner)
+(define-public (unpause-contract)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (var-set contract-paused false)
+    (print { event: "contract-unpaused", by: tx-sender })
+    (ok true)
   )
 )
