@@ -163,6 +163,27 @@
   )
 )
 
+;; Get campaign status as a readable constant
+(define-read-only (get-campaign-status (campaign-id uint))
+  (match (map-get? campaigns { id: campaign-id })
+    campaign 
+      (if (get claimed campaign)
+        STATUS_CLAIMED
+        (if (> stacks-block-height (get deadline campaign))
+          (if (>= (get raised campaign) (get goal campaign))
+            STATUS_FUNDED
+            STATUS_EXPIRED
+          )
+          (if (>= (get raised campaign) (get goal campaign))
+            STATUS_FUNDED
+            STATUS_ACTIVE
+          )
+        )
+      )
+    STATUS_EXPIRED
+  )
+)
+
 (define-read-only (calculate-fee (amount uint))
   (/ (* amount PLATFORM_FEE_BPS) BPS_DENOMINATOR)
 )
