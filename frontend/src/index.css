@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,15 +6,27 @@
 
 @layer base {
   :root {
-    --background: #1A1918;
-    --foreground: #FAFAF9;
+    --background: #1a1918;
+    --foreground: #fafaf9;
     --card: rgba(40, 38, 36, 0.8);
-    --card-foreground: #FAFAF9;
-    --primary: #FF6B1A;
-    --primary-foreground: #1A1918;
-    --muted: #3D3A37;
-    --muted-foreground: #A8A29E;
+    --card-foreground: #fafaf9;
+    --primary: #ff6b1a;
+    --primary-foreground: #1a1918;
+    --muted: #3d3a37;
+    --muted-foreground: #a8a29e;
     --border: rgba(255, 255, 255, 0.08);
+  }
+
+  .light {
+    --background: #fafaf9;
+    --foreground: #1c1917;
+    --card: rgba(255, 255, 255, 0.9);
+    --card-foreground: #1c1917;
+    --primary: #ff6b1a;
+    --primary-foreground: #ffffff;
+    --muted: #e7e5e4;
+    --muted-foreground: #78716c;
+    --border: rgba(0, 0, 0, 0.08);
   }
 
   * {
@@ -27,14 +39,19 @@
 
   body {
     @apply bg-dark-950 text-dark-50 font-body antialiased;
-    font-family: 'Exo 2', sans-serif;
-    background: #0F0E0D;
+    font-family: "Exo 2", sans-serif;
+    background: #0f0e0d;
     min-height: 100vh;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading tracking-wider;
-    font-family: 'Orbitron', sans-serif;
+    font-family: "Orbitron", sans-serif;
   }
 }
 
@@ -46,13 +63,13 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 
+    box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .glass-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -76,14 +93,14 @@
     @apply px-6 py-3 rounded-xl font-heading font-semibold text-sm uppercase tracking-wider
            transition-all duration-300 cursor-pointer
            disabled:opacity-50 disabled:cursor-not-allowed;
-    background: #FF6B1A;
-    color: #1A1918;
+    background: #ff6b1a;
+    color: #1a1918;
     box-shadow: 0 4px 20px rgba(255, 107, 26, 0.3);
   }
 
   .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: #E85D04;
+    background: #e85d04;
     box-shadow: 0 8px 30px rgba(255, 107, 26, 0.4);
   }
 
@@ -95,7 +112,7 @@
   .btn-secondary {
     @apply px-6 py-3 rounded-xl font-heading font-medium text-sm uppercase tracking-wider
            transition-all duration-300 cursor-pointer;
-    color: #F5F5F4;
+    color: #f5f5f4;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
@@ -124,13 +141,13 @@
   }
 
   .input:focus {
-    border-color: #FF6B1A;
+    border-color: #ff6b1a;
     box-shadow: 0 0 0 3px rgba(255, 107, 26, 0.15);
   }
 
   /* Gradient Text - Fixed */
   .gradient-text {
-    background: linear-gradient(135deg, #FF6B1A 0%, #FF8A4C 100%);
+    background: linear-gradient(135deg, #ff6b1a 0%, #ff8a4c 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -149,12 +166,12 @@
 
   .progress-bar-fill {
     @apply h-full rounded-full transition-all duration-500;
-    background: linear-gradient(90deg, #FF6B1A 0%, #FF8A4C 100%);
+    background: linear-gradient(90deg, #ff6b1a 0%, #ff8a4c 100%);
     box-shadow: 0 0 15px rgba(255, 107, 26, 0.4);
   }
 
   .progress-bar-fill.complete {
-    background: linear-gradient(90deg, #22C55E 0%, #4ADE80 100%);
+    background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
     box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
   }
 
@@ -166,21 +183,21 @@
   .badge-primary {
     @apply badge;
     background: rgba(255, 107, 26, 0.15);
-    color: #FF8A4C;
+    color: #ff8a4c;
     border: 1px solid rgba(255, 107, 26, 0.25);
   }
 
   .badge-secondary {
     @apply badge;
     background: rgba(255, 255, 255, 0.08);
-    color: #D6D3D1;
+    color: #d6d3d1;
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .badge-success {
     @apply badge;
     background: rgba(34, 197, 94, 0.15);
-    color: #4ADE80;
+    color: #4ade80;
     border: 1px solid rgba(34, 197, 94, 0.25);
   }
 
@@ -256,79 +273,79 @@
 /* Selection */
 ::selection {
   background: rgba(255, 107, 26, 0.3);
-  color: #FAFAF9;
+  color: #fafaf9;
 }
 
-  /* Rich Text Editor Styles */
-  .ProseMirror {
-    @apply text-dark-100 leading-relaxed;
-  }
+/* Rich Text Editor Styles */
+.ProseMirror {
+  @apply text-dark-100 leading-relaxed;
+}
 
-  .ProseMirror p.is-editor-empty:first-child::before {
-    @apply text-dark-500;
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-  }
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-dark-500;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 
-  .ProseMirror h1 {
-    @apply text-2xl font-heading font-bold text-dark-50 mb-4 mt-6;
-  }
+.ProseMirror h1 {
+  @apply text-2xl font-heading font-bold text-dark-50 mb-4 mt-6;
+}
 
-  .ProseMirror h2 {
-    @apply text-xl font-heading font-bold text-dark-100 mb-3 mt-5;
-  }
+.ProseMirror h2 {
+  @apply text-xl font-heading font-bold text-dark-100 mb-3 mt-5;
+}
 
-  .ProseMirror h3 {
-    @apply text-lg font-heading font-semibold text-dark-100 mb-2 mt-4;
-  }
+.ProseMirror h3 {
+  @apply text-lg font-heading font-semibold text-dark-100 mb-2 mt-4;
+}
 
-  .ProseMirror p {
-    @apply mb-4;
-  }
+.ProseMirror p {
+  @apply mb-4;
+}
 
-  .ProseMirror ul,
-  .ProseMirror ol {
-    @apply mb-4 ml-6;
-  }
+.ProseMirror ul,
+.ProseMirror ol {
+  @apply mb-4 ml-6;
+}
 
-  .ProseMirror ul {
-    @apply list-disc;
-  }
+.ProseMirror ul {
+  @apply list-disc;
+}
 
-  .ProseMirror ol {
-    @apply list-decimal;
-  }
+.ProseMirror ol {
+  @apply list-decimal;
+}
 
-  .ProseMirror li {
-    @apply mb-2;
-  }
+.ProseMirror li {
+  @apply mb-2;
+}
 
-  .ProseMirror blockquote {
-    @apply border-l-4 border-primary-500 pl-4 my-4 italic text-dark-300;
-  }
+.ProseMirror blockquote {
+  @apply border-l-4 border-primary-500 pl-4 my-4 italic text-dark-300;
+}
 
-  .ProseMirror hr {
-    @apply my-6 border-dark-600;
-  }
+.ProseMirror hr {
+  @apply my-6 border-dark-600;
+}
 
-  .ProseMirror strong {
-    @apply font-bold text-dark-50;
-  }
+.ProseMirror strong {
+  @apply font-bold text-dark-50;
+}
 
-  .ProseMirror em {
-    @apply italic;
-  }
+.ProseMirror em {
+  @apply italic;
+}
 
-  .ProseMirror code {
-    @apply bg-dark-800 px-2 py-1 rounded text-sm font-mono text-primary-400;
-  }
+.ProseMirror code {
+  @apply bg-dark-800 px-2 py-1 rounded text-sm font-mono text-primary-400;
+}
 
-  .ProseMirror pre {
-    @apply bg-dark-900 p-4 rounded-lg my-4 overflow-x-auto;
-  }
+.ProseMirror pre {
+  @apply bg-dark-900 p-4 rounded-lg my-4 overflow-x-auto;
+}
 
-  .ProseMirror pre code {
-    @apply bg-transparent p-0 text-dark-200;
-  }
+.ProseMirror pre code {
+  @apply bg-transparent p-0 text-dark-200;
+}

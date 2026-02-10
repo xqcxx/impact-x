@@ -1,16 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
-import { WalletConnect } from './WalletConnect';
-import { Zap, Search, PlusCircle, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Link, useLocation } from "react-router-dom";
+import { WalletConnect } from "./WalletConnect";
+import { DarkModeToggle } from "./DarkModeToggle";
+import { Zap, Search, PlusCircle, User, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { path: '/explore', label: 'Explore', icon: Search },
-    { path: '/create', label: 'Create', icon: PlusCircle },
-    { path: '/my-campaigns', label: 'My Campaigns', icon: User },
+    { path: "/explore", label: "Explore", icon: Search },
+    { path: "/create", label: "Create", icon: PlusCircle },
+    { path: "/my-campaigns", label: "My Campaigns", icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -33,8 +34,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 to={path}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
                   isActive(path)
-                    ? 'bg-primary-500/15 text-primary-400 font-medium'
-                    : 'text-dark-300 hover:text-dark-100 hover:bg-white/5'
+                    ? "bg-primary-500/15 text-primary-400 font-medium"
+                    : "text-dark-300 hover:text-dark-100 hover:bg-white/5"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -45,8 +46,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Right Section */}
           <div className="flex items-center gap-4">
+            <DarkModeToggle />
             <WalletConnect />
-            
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -68,8 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive(path)
-                      ? 'bg-primary-500/15 text-primary-400 font-medium'
-                      : 'text-dark-300 hover:text-dark-100 hover:bg-white/5'
+                      ? "bg-primary-500/15 text-primary-400 font-medium"
+                      : "text-dark-300 hover:text-dark-100 hover:bg-white/5"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -82,9 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
-        {children}
-      </main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">{children}</main>
 
       {/* Footer */}
       <footer className="glass-card mx-4 mb-4 mt-auto">
@@ -96,7 +96,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <span className="font-heading font-medium text-dark-100">Impact-X</span>
               <span className="text-dark-600">|</span>
-              <span className="text-sm text-dark-400">Cross-chain crowdfunding for Bitcoin builders</span>
+              <span className="text-sm text-dark-400">
+                Cross-chain crowdfunding for Bitcoin builders
+              </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-dark-500">
               <span>Powered by</span>
