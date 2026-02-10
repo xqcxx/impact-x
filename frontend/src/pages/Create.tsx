@@ -17,6 +17,7 @@ import { uploadToIPFS, uploadImageToIPFS, type CampaignMetadata } from "../lib/i
 import { createCampaign } from "../lib/stacks";
 import { RichTextEditor } from "../components/RichTextEditor";
 import { CategorySelector } from "../components/CategorySelector";
+import { GasFeeDisplay } from "../components/GasFeeDisplay";
 import { CampaignCategory, isValidCategory } from "../lib/categories";
 
 type FormStep = "details" | "story" | "review";
@@ -461,6 +462,16 @@ export function CreatePage() {
               <span className="text-dark-400 block mb-2">Description</span>
               <p className="text-dark-200">{description}</p>
             </div>
+          </div>
+
+          {/* Gas Fee Estimate */}
+          <div className="mb-6">
+            <GasFeeDisplay
+              transactionType="create-campaign"
+              network="stacks"
+              showRefresh={true}
+              variant="detailed"
+            />
           </div>
 
           {!connected ? (
