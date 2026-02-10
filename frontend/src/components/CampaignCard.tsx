@@ -1,7 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ProgressBar } from "./ProgressBar";
+import { CategoryBadge } from "./CategoryBadge";
 import { Clock, Users, ArrowUpRight } from "lucide-react";
+import { CampaignCategory } from "../lib/categories";
 
 export interface Campaign {
   id: number;
@@ -44,7 +46,7 @@ function CampaignCardComponent({ campaign }: CampaignCardProps) {
 
         {/* Category Badge */}
         <div className="absolute top-3 left-3">
-          <span className="badge-primary">{campaign.category}</span>
+          <CategoryBadge category={campaign.category as CampaignCategory} size="sm" />
         </div>
 
         {/* Funded Badge */}
