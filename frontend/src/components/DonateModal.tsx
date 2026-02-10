@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
-import confetti from 'canvas-confetti';
-import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from 'lucide-react';
-import { useStacksWallet } from '../hooks/useStacksWallet';
-import { donate } from '../lib/stacks';
-import { BridgeModal } from './BridgeModal';
+import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
+import confetti from "canvas-confetti";
+import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from "lucide-react";
+import { useStacksWallet } from "../hooks/useStacksWallet";
+import { donate } from "../lib/stacks";
+import { BridgeModal } from "./BridgeModal";
+import { GasFeeDisplay } from "./GasFeeDisplay";
+import { GasSpeedSelector, GasSpeed } from "./GasSpeedSelector";
 
 interface DonateModalProps {
   isOpen: boolean;
@@ -21,21 +23,22 @@ export function DonateModal({
   campaignId,
   onSuccess,
 }: DonateModalProps) {
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState("");
   const [donating, setDonating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [txId, setTxId] = useState<string | null>(null);
-  
+  const [gasSpeed, setGasSpeed] = useState<GasSpeed>("standard");
+
   // Bridge Modal State
   const [showBridge, setShowBridge] = useState(false);
-  
+
   const { connected: stxConnected, connect: connectStx, stxAddress } = useStacksWallet();
 
   // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setAmount('');
+      setAmount("");
       setError(null);
       setSuccess(false);
       setTxId(null);
@@ -46,7 +49,7 @@ export function DonateModal({
 
   const triggerConfetti = () => {
     const end = Date.now() + 2000;
-    const colors = ['#FF6B1A', '#FF8A4C', '#ffffff'];
+    const colors = ["#FF6B1A", "#FF8A4C", "#ffffff"];
 
     (function frame() {
       confetti({
@@ -54,32 +57,32 @@ export function DonateModal({
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: colors
+        colors: colors,
       });
       confetti({
         particleCount: 3,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: colors
+        colors: colors,
       });
 
       if (Date.now() < end) {
         requestAnimationFrame(frame);
       }
-    }());
+    })();
   };
 
   const handleDonate = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      const msg = 'Please enter a valid amount';
+      const msg = "Please enter a valid amount";
       setError(msg);
       toast.error(msg);
       return;
     }
 
     if (!stxConnected || !stxAddress) {
-      const msg = 'Please connect your Stacks wallet';
+      const msg = "Please connect your Stacks wallet";
       setError(msg);
       toast.error(msg);
       return;
@@ -87,23 +90,23 @@ export function DonateModal({
 
     setDonating(true);
     setError(null);
-    const toastId = toast.loading('Processing donation...');
+    const toastId = toast.loading("Processing donation...");
 
     try {
       // Call donate function - this transfers USDCx from user's wallet to contract escrow
       const result = await donate(campaignId, parseFloat(amount));
-      
+
       setTxId(result.txId);
       setSuccess(true);
-      toast.success('Donation successful!', { id: toastId });
+      toast.success("Donation successful!", { id: toastId });
       triggerConfetti();
-      
+
       setTimeout(() => {
         onSuccess?.();
       }, 3000);
     } catch (err: any) {
-      console.error('Donation failed:', err);
-      const msg = err.message || 'Failed to donate. Make sure you have enough USDCx.';
+      console.error("Donation failed:", err);
+      const msg = err.message || "Failed to donate. Make sure you have enough USDCx.";
       setError(msg);
       toast.error(msg, { id: toastId });
     } finally {
@@ -124,9 +127,9 @@ export function DonateModal({
   // If showing bridge, render BridgeModal instead
   if (showBridge) {
     return (
-      <BridgeModal 
-        isOpen={true} 
-        onClose={() => setShowBridge(false)} 
+      <BridgeModal
+        isOpen={true}
+        onClose={() => setShowBridge(false)}
         defaultAmount={amount}
         onSuccess={() => {
           setShowBridge(false);
@@ -141,19 +144,16 @@ export function DonateModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-dark-900/80 backdrop-blur-md"
-        onClick={handleClose}
-      />
-      
+      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-md" onClick={handleClose} />
+
       {/* Modal */}
       <div className="glass-card relative max-w-md w-full overflow-hidden animate-in">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <h2 className="text-lg font-heading font-semibold text-dark-100">
-            {success ? 'Donation Successful!' : 'Donate with USDCx'}
+            {success ? "Donation Successful!" : "Donate with USDCx"}
           </h2>
-          <button 
+          <button
             onClick={handleClose}
             disabled={donating}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
@@ -172,7 +172,8 @@ export function DonateModal({
                 Thank you for your support!
               </h3>
               <p className="text-dark-400 mb-4">
-                Your donation of ${parseFloat(amount).toFixed(2)} USDCx has been deposited into escrow.
+                Your donation of ${parseFloat(amount).toFixed(2)} USDCx has been deposited into
+                escrow.
               </p>
               {txId && (
                 <a
@@ -198,10 +199,12 @@ export function DonateModal({
                 <div className="flex items-start gap-3">
                   <Lock className="w-5 h-5 text-secondary-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-heading font-medium text-secondary-300 mb-1">Escrow Protection</h4>
+                    <h4 className="font-heading font-medium text-secondary-300 mb-1">
+                      Escrow Protection
+                    </h4>
                     <p className="text-xs text-secondary-400/80">
-                      Your USDCx will be held securely in the smart contract. If the campaign doesn't reach its goal, 
-                      you can request a full refund after the deadline.
+                      Your USDCx will be held securely in the smart contract. If the campaign
+                      doesn't reach its goal, you can request a full refund after the deadline.
                     </p>
                   </div>
                 </div>
@@ -213,13 +216,11 @@ export function DonateModal({
                   <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/15 flex items-center justify-center">
                     <Zap className="w-8 h-8 text-primary-400" />
                   </div>
-                  <p className="text-dark-300 mb-6">
-                    Connect your Stacks wallet to donate USDCx
-                  </p>
+                  <p className="text-dark-300 mb-6">Connect your Stacks wallet to donate USDCx</p>
                   <button onClick={connectStx} className="btn-primary w-full mb-4">
                     Connect Stacks Wallet
                   </button>
-                  
+
                   <div className="relative py-2">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-white/10"></div>
@@ -229,7 +230,7 @@ export function DonateModal({
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={openBridge}
                     className="w-full btn-secondary flex items-center justify-center gap-2 mt-4"
                   >
@@ -243,7 +244,10 @@ export function DonateModal({
                   {/* Connected Wallet */}
                   <div className="mb-4 p-3 rounded-xl bg-success-500/10 border border-success-500/30 flex items-center justify-between">
                     <p className="text-xs text-success-400">
-                      Connected: <span className="font-mono">{stxAddress?.slice(0, 8)}...{stxAddress?.slice(-4)}</span>
+                      Connected:{" "}
+                      <span className="font-mono">
+                        {stxAddress?.slice(0, 8)}...{stxAddress?.slice(-4)}
+                      </span>
                     </p>
                   </div>
 
@@ -253,7 +257,7 @@ export function DonateModal({
                       <label className="text-sm font-medium text-dark-300">
                         Donation Amount (USDCx)
                       </label>
-                      <button 
+                      <button
                         onClick={openBridge}
                         className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
                       >
@@ -261,9 +265,11 @@ export function DonateModal({
                         Need USDCx? Bridge
                       </button>
                     </div>
-                    
+
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 text-lg">$</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400 text-lg">
+                        $
+                      </span>
                       <input
                         type="number"
                         step="0.01"
@@ -275,9 +281,27 @@ export function DonateModal({
                         disabled={donating}
                       />
                     </div>
-                    <p className="text-xs text-dark-500 mt-2">
-                      Minimum: $1.00 USDCx
-                    </p>
+                    <p className="text-xs text-dark-500 mt-2">Minimum: $1.00 USDCx</p>
+                  </div>
+
+                  {/* Gas Speed Selector */}
+                  <div className="mb-6">
+                    <GasSpeedSelector
+                      selectedSpeed={gasSpeed}
+                      onSelectSpeed={setGasSpeed}
+                      network="stacks"
+                    />
+                  </div>
+
+                  {/* Gas Fee Display */}
+                  <div className="mb-6">
+                    <GasFeeDisplay
+                      transactionType="donate"
+                      amount={parseFloat(amount) || 0}
+                      network="stacks"
+                      showRefresh={true}
+                      variant="compact"
+                    />
                   </div>
 
                   {/* Error Message */}
@@ -308,8 +332,8 @@ export function DonateModal({
                   </button>
 
                   <p className="text-xs text-dark-500 mt-4 text-center">
-                    Your donation will be held in the smart contract until the campaign ends.
-                    5% platform fee applies only if the goal is met.
+                    Your donation will be held in the smart contract until the campaign ends. 5%
+                    platform fee applies only if the goal is met.
                   </p>
                 </>
               )}
