@@ -1,61 +1,63 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { 
-  Upload, 
-  DollarSign, 
-  Calendar, 
-  FileText, 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import {
+  Upload,
+  DollarSign,
+  Calendar,
+  FileText,
   Image as ImageIcon,
   Loader2,
   CheckCircle,
   AlertCircle,
-  Sparkles
-} from 'lucide-react';
-import { useStacksWallet } from '../hooks/useStacksWallet';
-import { uploadToIPFS, uploadImageToIPFS, type CampaignMetadata, CAMPAIGN_CATEGORIES } from '../lib/ipfs';
-import { createCampaign } from '../lib/stacks';
-import { RichTextEditor } from '../components/RichTextEditor';
+  Sparkles,
+} from "lucide-react";
+import { useStacksWallet } from "../hooks/useStacksWallet";
+import { uploadToIPFS, uploadImageToIPFS, type CampaignMetadata } from "../lib/ipfs";
+import { createCampaign } from "../lib/stacks";
+import { RichTextEditor } from "../components/RichTextEditor";
+import { CategorySelector } from "../components/CategorySelector";
+import { CampaignCategory, isValidCategory } from "../lib/categories";
 
-type FormStep = 'details' | 'story' | 'review';
+type FormStep = "details" | "story" | "review";
 
 export function CreatePage() {
   const navigate = useNavigate();
   const { connected, stxAddress, connect, refresh } = useStacksWallet();
-  
-  const [currentStep, setCurrentStep] = useState<FormStep>('details');
+
+  const [currentStep, setCurrentStep] = useState<FormStep>("details");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
+
   // Refresh wallet state when component mounts or gains focus
   useEffect(() => {
     // Initial refresh
     refresh();
-    
+
     // Refresh when window gains focus
     const handleFocus = () => {
       refresh();
     };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [refresh]);
-  
+
   // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [story, setStory] = useState('');
-  const [category, setCategory] = useState('Technology');
-  const [goal, setGoal] = useState('');
-  const [duration, setDuration] = useState('30');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [story, setStory] = useState("");
+  const [category, setCategory] = useState<CampaignCategory>("");
+  const [goal, setGoal] = useState("");
+  const [duration, setDuration] = useState("30");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleGoalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Allow empty string or numeric characters not starting with 0
-    if (value === '' || /^[1-9][0-9]*$/.test(value)) {
+    if (value === "" || /^[1-9][0-9]*$/.test(value)) {
       setGoal(value);
     }
   };
@@ -64,14 +66,14 @@ export function CreatePage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size must be less than 5MB');
+        toast.error("Image size must be less than 5MB");
         return;
       }
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
-        toast.success('Image uploaded successfully');
+        toast.success("Image uploaded successfully");
       };
       reader.readAsDataURL(file);
     }
@@ -91,6 +93,14 @@ export function CreatePage() {
         toast.error(msg);
         return false;
       }
+      if (!category || !isValidCategory(category)) {
+        const msg = 'Please select a campaign category';
+        setCategoryError(msg);
+        setError(msg);
+        toast.error(msg);
+        return false;
+      }
+      setCategoryError('');
       if (!goal || parseFloat(goal) < 100) {
         const msg = 'Goal must be at least $100';
         setError(msg);
@@ -98,11 +108,24 @@ export function CreatePage() {
         return false;
       }
     }
-    if (step === 'story') {
+      if (!description.trim()) {
+        const msg = "Please enter a description";
+        setError(msg);
+        toast.error(msg);
+        return false;
+      }
+      if (!goal || parseFloat(goal) < 100) {
+        const msg = "Goal must be at least $100";
+        setError(msg);
+        toast.error(msg);
+        return false;
+      }
+    }
+    if (step === "story") {
       // Strip HTML tags to check actual text content
-      const textContent = story.replace(/<[^>]*>/g, '').trim();
+      const textContent = story.replace(/<[^>]*>/g, "").trim();
       if (!textContent || textContent.length < 100) {
-        const msg = 'Please write a story (at least 100 characters)';
+        const msg = "Please write a story (at least 100 characters)";
         setError(msg);
         toast.error(msg);
         return false;
@@ -114,31 +137,31 @@ export function CreatePage() {
 
   const handleNext = () => {
     if (!validateStep(currentStep)) return;
-    
-    if (currentStep === 'details') setCurrentStep('story');
-    else if (currentStep === 'story') setCurrentStep('review');
+
+    if (currentStep === "details") setCurrentStep("story");
+    else if (currentStep === "story") setCurrentStep("review");
   };
 
   const handleBack = () => {
-    if (currentStep === 'story') setCurrentStep('details');
-    else if (currentStep === 'review') setCurrentStep('story');
+    if (currentStep === "story") setCurrentStep("details");
+    else if (currentStep === "review") setCurrentStep("story");
   };
 
   const handleSubmit = async () => {
     if (!connected || !stxAddress) {
-      toast.error('Please connect your Stacks wallet first');
+      toast.error("Please connect your Stacks wallet first");
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const toastId = toast.loading('Creating your campaign...');
+      const toastId = toast.loading("Creating your campaign...");
 
       // Upload image if provided
-      let imageUrl = 'https://via.placeholder.com/800x400?text=Campaign';
+      let imageUrl = "https://via.placeholder.com/800x400?text=Campaign";
       if (imageFile) {
-        toast.loading('Uploading image to IPFS...', { id: toastId });
+        toast.loading("Uploading image to IPFS...", { id: toastId });
         imageUrl = await uploadImageToIPFS(imageFile);
       }
 
@@ -154,30 +177,25 @@ export function CreatePage() {
       };
 
       // Upload to IPFS
-      toast.loading('Uploading metadata to IPFS...', { id: toastId });
+      toast.loading("Uploading metadata to IPFS...", { id: toastId });
       const ipfsHash = await uploadToIPFS(metadata);
-      console.log('Uploaded to IPFS:', ipfsHash);
+      console.log("Uploaded to IPFS:", ipfsHash);
 
       // Create campaign on-chain
-      toast.loading('Confirming transaction on wallet...', { id: toastId });
-      const result = await createCampaign(
-        ipfsHash,
-        parseFloat(goal),
-        parseInt(duration)
-      );
+      toast.loading("Confirming transaction on wallet...", { id: toastId });
+      const result = await createCampaign(ipfsHash, parseFloat(goal), parseInt(duration));
 
-      console.log('Campaign created:', result);
-      toast.success('Campaign created successfully!', { id: toastId });
+      console.log("Campaign created:", result);
+      toast.success("Campaign created successfully!", { id: toastId });
       setSuccess(true);
 
       // Redirect after success
       setTimeout(() => {
-        navigate('/my-campaigns');
+        navigate("/my-campaigns");
       }, 2000);
-
     } catch (err: any) {
-      console.error('Failed to create campaign:', err);
-      const msg = err.message || 'Failed to create campaign';
+      console.error("Failed to create campaign:", err);
+      const msg = err.message || "Failed to create campaign";
       setError(msg);
       toast.error(msg);
       toast.dismiss();
@@ -194,8 +212,7 @@ export function CreatePage() {
         </div>
         <h1 className="text-2xl font-heading font-bold text-dark-100 mb-3">Campaign Created!</h1>
         <p className="text-dark-400 mb-4">
-          Your campaign is being submitted to the blockchain. 
-          Redirecting to your campaigns...
+          Your campaign is being submitted to the blockchain. Redirecting to your campaigns...
         </p>
         <div className="animate-pulse">
           <Loader2 className="w-6 h-6 text-primary-400 mx-auto animate-spin" />
@@ -216,32 +233,38 @@ export function CreatePage() {
 
       {/* Progress Steps */}
       <div className="flex items-center justify-between mb-8 px-4">
-        {(['details', 'story', 'review'] as FormStep[]).map((step, index) => (
+        {(["details", "story", "review"] as FormStep[]).map((step, index) => (
           <div key={step} className="flex items-center">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-heading font-bold transition-all ${
-              currentStep === step
-                ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20'
-                : index < ['details', 'story', 'review'].indexOf(currentStep)
-                  ? 'bg-success-500/15 text-success-400'
-                  : 'bg-white/5 text-dark-500'
-            }`}>
-              {index < ['details', 'story', 'review'].indexOf(currentStep) ? (
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center font-heading font-bold transition-all ${
+                currentStep === step
+                  ? "bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20"
+                  : index < ["details", "story", "review"].indexOf(currentStep)
+                    ? "bg-success-500/15 text-success-400"
+                    : "bg-white/5 text-dark-500"
+              }`}
+            >
+              {index < ["details", "story", "review"].indexOf(currentStep) ? (
                 <CheckCircle className="w-5 h-5" />
               ) : (
                 index + 1
               )}
             </div>
-            <span className={`ml-2 text-sm font-medium hidden sm:block ${
-              currentStep === step ? 'text-dark-100' : 'text-dark-500'
-            }`}>
+            <span
+              className={`ml-2 text-sm font-medium hidden sm:block ${
+                currentStep === step ? "text-dark-100" : "text-dark-500"
+              }`}
+            >
               {step.charAt(0).toUpperCase() + step.slice(1)}
             </span>
             {index < 2 && (
-              <div className={`w-8 sm:w-16 h-px mx-2 sm:mx-4 ${
-                index < ['details', 'story', 'review'].indexOf(currentStep)
-                  ? 'bg-success-500/30'
-                  : 'bg-white/10'
-              }`} />
+              <div
+                className={`w-8 sm:w-16 h-px mx-2 sm:mx-4 ${
+                  index < ["details", "story", "review"].indexOf(currentStep)
+                    ? "bg-success-500/30"
+                    : "bg-white/10"
+                }`}
+              />
             )}
           </div>
         ))}
@@ -256,12 +279,10 @@ export function CreatePage() {
       )}
 
       {/* Step 1: Details */}
-      {currentStep === 'details' && (
+      {currentStep === "details" && (
         <div className="glass-card p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-dark-200 mb-2">
-              Campaign Title *
-            </label>
+            <label className="block text-sm font-medium text-dark-200 mb-2">Campaign Title *</label>
             <input
               type="text"
               value={title}
@@ -272,19 +293,11 @@ export function CreatePage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-dark-200 mb-2">
-              Short Description *
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Briefly describe your campaign (shown in previews)"
-              className="input min-h-[100px] resize-none"
-              maxLength={200}
-            />
-            <p className="text-xs text-dark-500 mt-1">{description.length}/200</p>
-          </div>
+          <CategorySelector
+            selectedCategory={category}
+            onSelectCategory={setCategory}
+            error={categoryError}
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -321,16 +334,16 @@ export function CreatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-200 mb-2">
-              Category
-            </label>
+            <label className="block text-sm font-medium text-dark-200 mb-2">Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="input"
             >
               {CAMPAIGN_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
           </div>
@@ -340,14 +353,21 @@ export function CreatePage() {
               <ImageIcon className="w-4 h-4 inline mr-1 text-success-400" />
               Campaign Image
             </label>
-            <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-              imagePreview ? 'border-primary-500/50 bg-primary-500/5' : 'border-white/20 hover:border-primary-500/50'
-            }`}>
+            <div
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                imagePreview
+                  ? "border-primary-500/50 bg-primary-500/5"
+                  : "border-white/20 hover:border-primary-500/50"
+              }`}
+            >
               {imagePreview ? (
                 <div className="relative">
                   <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
                   <button
-                    onClick={() => { setImageFile(null); setImagePreview(null); }}
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
                     className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
                   >
                     ×
@@ -372,7 +392,7 @@ export function CreatePage() {
       )}
 
       {/* Step 2: Story */}
-      {currentStep === 'story' && (
+      {currentStep === "story" && (
         <div className="glass-card p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-dark-200 mb-2">
@@ -380,18 +400,19 @@ export function CreatePage() {
               Campaign Story *
             </label>
             <p className="text-sm text-dark-500 mb-3">
-              Tell potential backers about your project, why it matters, and how you'll use the funds. Use rich formatting to make your story compelling!
+              Tell potential backers about your project, why it matters, and how you'll use the
+              funds. Use rich formatting to make your story compelling!
             </p>
-            
+
             <RichTextEditor
               value={story}
               onChange={setStory}
               placeholder="Share your story... What problem are you solving? Who will benefit? What's your plan?"
               minHeight="400px"
             />
-            
+
             <p className="text-xs text-dark-500 mt-2">
-              {story.replace(/<[^>]*>/g, '').trim().length} characters of content (min 100)
+              {story.replace(/<[^>]*>/g, "").trim().length} characters of content (min 100)
             </p>
           </div>
 
@@ -413,10 +434,10 @@ export function CreatePage() {
       )}
 
       {/* Step 3: Review */}
-      {currentStep === 'review' && (
+      {currentStep === "review" && (
         <div className="glass-card p-6 space-y-6">
           <h2 className="text-lg font-heading font-semibold text-dark-100">Review Your Campaign</h2>
-          
+
           <div className="space-y-1">
             <div className="flex justify-between py-3 border-b border-white/10">
               <span className="text-dark-400">Title</span>
@@ -428,7 +449,9 @@ export function CreatePage() {
             </div>
             <div className="flex justify-between py-3 border-b border-white/10">
               <span className="text-dark-400">Funding Goal</span>
-              <span className="font-heading font-semibold text-primary-400">${parseInt(goal).toLocaleString()} USDC</span>
+              <span className="font-heading font-semibold text-primary-400">
+                ${parseInt(goal).toLocaleString()} USDC
+              </span>
             </div>
             <div className="flex justify-between py-3 border-b border-white/10">
               <span className="text-dark-400">Duration</span>
@@ -452,14 +475,18 @@ export function CreatePage() {
           ) : (
             <div className="p-4 rounded-xl bg-success-500/10 border border-success-500/30">
               <p className="text-success-400">
-                Creating as: <strong className="font-mono">{stxAddress?.slice(0, 8)}...{stxAddress?.slice(-4)}</strong>
+                Creating as:{" "}
+                <strong className="font-mono">
+                  {stxAddress?.slice(0, 8)}...{stxAddress?.slice(-4)}
+                </strong>
               </p>
             </div>
           )}
 
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-dark-400">
-              <strong className="text-dark-200">Platform fee:</strong> 5% of funds raised (only charged on successful campaigns)
+              <strong className="text-dark-200">Platform fee:</strong> 5% of funds raised (only
+              charged on successful campaigns)
             </p>
           </div>
         </div>
@@ -467,15 +494,15 @@ export function CreatePage() {
 
       {/* Navigation Buttons */}
       <div className="flex justify-between mt-8">
-        {currentStep !== 'details' ? (
+        {currentStep !== "details" ? (
           <button onClick={handleBack} className="btn-secondary">
             Back
           </button>
         ) : (
           <div />
         )}
-        
-        {currentStep !== 'review' ? (
+
+        {currentStep !== "review" ? (
           <button onClick={handleNext} className="btn-primary">
             Continue
           </button>
