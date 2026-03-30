@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f1e8;
+  --bg-strong: #eee3d5;
+  --surface: #fffaf3;
+  --surface-muted: #f4eadc;
+  --text: #2b1e14;
+  --text-soft: #6d4f39;
+  --brand: #8f2a23;
+  --brand-soft: #ad3b2f;
+  --accent: #2f6f5a;
+  --ring: rgba(143, 42, 35, 0.22);
+  --border: #d9c5ad;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-libre-baskerville);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(143, 42, 35, 0.1), transparent 26%),
+    linear-gradient(180deg, var(--bg), var(--bg-strong));
+  color: var(--text);
+  font-family: var(--font-libre-baskerville), serif;
+  min-height: 100vh;
+}
+
+input,
+select {
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: riseIn 420ms ease-out both;
+}
