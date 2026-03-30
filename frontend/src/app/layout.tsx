@@ -17,6 +17,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Process Audit Ledger",
   description: "Immutable workflow and compliance logging on Stacks.",
+  other: {
+    "talentapp:project_verification":
+      "f512cfc20c2dd63e613938d09a5b25f590f2a555cda3de64696c34272bb9113a81db0eee7fd1a2de0528605dc8c255bdf93676bd3cac4ccce1912bf56b485886",
+  },
   openGraph: {
     title: "Process Audit Ledger",
     description: "Immutable workflow and compliance logging on Stacks.",
