@@ -3,9 +3,21 @@
  * Handles fetching and managing campaign data from the smart contract and IPFS
  */
 
-import { fetchCampaign, fetchCampaignCount, fetchBackerCount } from './stacks';
-import { fetchFromIPFS, type CampaignMetadata } from './ipfs';
+import {
+  fetchCampaign,
+  fetchCampaignCount,
+  fetchBackerCount,
+  fetchEndorsementCount,
+  fetchCampaignUpdates,
+  type CampaignUpdate,
+} from './stacks';
+import { fetchFromIPFS, type CampaignMetadata, type CampaignUpdateMetadata } from './ipfs';
 import { getStacksNetwork } from './constants';
+
+export interface CreatorUpdate extends CampaignUpdate {
+  title: string;
+  body: string;
+}
 
 // Combined campaign type with on-chain and off-chain data
 export interface FullCampaign {
@@ -18,6 +30,8 @@ export interface FullCampaign {
   goal: number;        // in USDC
   raised: number;      // in USDC
   backers: number;
+  endorsements: number;
+  updates: CreatorUpdate[];
   daysLeft: number;
   deadline: number;    // block height
   claimed: boolean;
@@ -80,9 +94,14 @@ export async function getFullCampaign(campaignId: number): Promise<FullCampaign 
 
     console.log(`[getFullCampaign] On-chain data for campaign ${campaignId}:`, onChainData);
 
-    // Fetch backer count
-    const backerCount = await fetchBackerCount(campaignId);
+    // Fetch social and activity data
+    const [backerCount, endorsementCount, rawUpdates] = await Promise.all([
+      fetchBackerCount(campaignId),
+      fetchEndorsementCount(campaignId),
+      fetchCampaignUpdates(campaignId),
+    ]);
     console.log(`[getFullCampaign] Backer count for campaign ${campaignId}:`, backerCount);
+    console.log(`[getFullCampaign] Endorsement count for campaign ${campaignId}:`, endorsementCount);
 
     // Fetch IPFS metadata
     let metadata: CampaignMetadata | null = null;
@@ -99,6 +118,18 @@ export async function getFullCampaign(campaignId: number): Promise<FullCampaign 
     const daysLeft = calculateDaysLeft(onChainData.deadline, currentBlock);
     console.log(`[getFullCampaign] Days left: ${daysLeft} (deadline: ${onChainData.deadline}, current: ${currentBlock})`);
 
+    const updates = await Promise.all(
+      rawUpdates.map(async update => {
+        const updateMetadata = await fetchFromIPFS(update.ipfsHash) as CampaignUpdateMetadata | null;
+
+        return {
+          ...update,
+          title: updateMetadata?.title || `Update #${update.id}`,
+          body: updateMetadata?.body || 'Update details could not be loaded.',
+        };
+      })
+    );
+
     // Combine data
     const fullCampaign = {
       id: campaignId,
@@ -110,6 +141,8 @@ export async function getFullCampaign(campaignId: number): Promise<FullCampaign 
       goal: onChainData.goal,
       raised: onChainData.raised,
       backers: backerCount,
+      endorsements: endorsementCount,
+      updates,
       daysLeft,
       deadline: onChainData.deadline,
       claimed: onChainData.claimed,

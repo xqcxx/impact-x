@@ -21,6 +21,12 @@ export interface CampaignMetadata {
   updatedAt?: number;
 }
 
+export interface CampaignUpdateMetadata {
+  title: string;
+  body: string;
+  createdAt: number;
+}
+
 // Available categories
 export const CAMPAIGN_CATEGORIES = [
   'Technology',
@@ -76,6 +82,35 @@ export async function uploadToIPFS(metadata: CampaignMetadata): Promise<string> 
 
   const result = await response.json();
   console.log('Uploaded to IPFS:', result.IpfsHash);
+  return result.IpfsHash;
+}
+
+export async function uploadJSONToIPFS(content: unknown, name: string): Promise<string> {
+  const pinataJWT = import.meta.env.VITE_PINATA_JWT;
+
+  if (!pinataJWT) {
+    throw new Error('IPFS upload requires Pinata JWT. Please set VITE_PINATA_JWT in your .env file.');
+  }
+
+  const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${pinataJWT}`,
+    },
+    body: JSON.stringify({
+      pinataContent: content,
+      pinataMetadata: { name },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('Pinata upload failed:', error);
+    throw new Error('Failed to upload metadata to IPFS');
+  }
+
+  const result = await response.json();
   return result.IpfsHash;
 }
 

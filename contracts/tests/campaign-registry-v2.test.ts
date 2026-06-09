@@ -469,6 +469,194 @@ describe("Campaign Registry V2 - Escrow Tests", () => {
     });
   });
 
+  describe("Campaign Endorsements", () => {
+    beforeEach(() => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "create-campaign",
+        [
+          Cl.stringAscii(IPFS_HASH),
+          Cl.uint(CAMPAIGN_GOAL),
+          Cl.uint(DURATION),
+        ],
+        alice
+      );
+    });
+
+    it("should allow a user to endorse a campaign", () => {
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(1)],
+        bob
+      );
+
+      expect(result).toBeOk(Cl.bool(true));
+
+      const hasEndorsed = simnet.callReadOnlyFn(
+        "campaign-registry-v2",
+        "has-endorsed",
+        [Cl.uint(1), Cl.principal(bob)],
+        bob
+      );
+
+      expect(hasEndorsed.result).toBeBool(true);
+    });
+
+    it("should increment endorsement count", () => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(1)],
+        bob
+      );
+
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(1)],
+        charlie
+      );
+
+      const count = simnet.callReadOnlyFn(
+        "campaign-registry-v2",
+        "get-endorsement-count",
+        [Cl.uint(1)],
+        alice
+      );
+
+      expect(count.result).toEqual(Cl.tuple({ count: Cl.uint(2) }));
+    });
+
+    it("should prevent duplicate endorsements", () => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(1)],
+        bob
+      );
+
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(1)],
+        bob
+      );
+
+      expect(result).toBeErr(Cl.uint(112)); // ERR_ALREADY_ENDORSED
+    });
+
+    it("should fail for missing campaign", () => {
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "endorse-campaign",
+        [Cl.uint(99)],
+        bob
+      );
+
+      expect(result).toBeErr(Cl.uint(101)); // ERR_CAMPAIGN_NOT_FOUND
+    });
+  });
+
+  describe("Campaign Updates", () => {
+    const UPDATE_HASH = "QmUpdate123456789";
+
+    beforeEach(() => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "create-campaign",
+        [
+          Cl.stringAscii(IPFS_HASH),
+          Cl.uint(CAMPAIGN_GOAL),
+          Cl.uint(DURATION),
+        ],
+        alice
+      );
+    });
+
+    it("should allow campaign owner to post an update", () => {
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(1), Cl.stringAscii(UPDATE_HASH)],
+        alice
+      );
+
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("should store posted update details", () => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(1), Cl.stringAscii(UPDATE_HASH)],
+        alice
+      );
+
+      const update = simnet.callReadOnlyFn(
+        "campaign-registry-v2",
+        "get-campaign-update",
+        [Cl.uint(1), Cl.uint(1)],
+        alice
+      );
+
+      expect(update.result).toBeSome(
+        Cl.tuple({
+          author: Cl.principal(alice),
+          "ipfs-hash": Cl.stringAscii(UPDATE_HASH),
+          "created-at": Cl.uint(simnet.blockHeight),
+        })
+      );
+    });
+
+    it("should increment update count", () => {
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(1), Cl.stringAscii(UPDATE_HASH)],
+        alice
+      );
+
+      simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(1), Cl.stringAscii("QmUpdate987654321")],
+        alice
+      );
+
+      const count = simnet.callReadOnlyFn(
+        "campaign-registry-v2",
+        "get-campaign-update-count",
+        [Cl.uint(1)],
+        alice
+      );
+
+      expect(count.result).toEqual(Cl.tuple({ count: Cl.uint(2) }));
+    });
+
+    it("should fail if non-owner posts an update", () => {
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(1), Cl.stringAscii(UPDATE_HASH)],
+        bob
+      );
+
+      expect(result).toBeErr(Cl.uint(100)); // ERR_NOT_OWNER
+    });
+
+    it("should fail update for missing campaign", () => {
+      const { result } = simnet.callPublicFn(
+        "campaign-registry-v2",
+        "post-campaign-update",
+        [Cl.uint(99), Cl.stringAscii(UPDATE_HASH)],
+        alice
+      );
+
+      expect(result).toBeErr(Cl.uint(101)); // ERR_CAMPAIGN_NOT_FOUND
+    });
+  });
+
   describe("Read-Only Helper Functions", () => {
     beforeEach(() => {
       simnet.callPublicFn(

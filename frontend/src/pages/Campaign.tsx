@@ -13,16 +13,20 @@ import {
   Loader2,
   ArrowDownCircle,
   Twitter,
-  Lock
+  Lock,
+  Heart,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import { ProgressBar } from '../components/ProgressBar';
 import { DonateModal } from '../components/DonateModal';
 import { DonationList } from '../components/DonationList';
 import { truncateAddress } from '../lib/helpers';
 import { getFullCampaign, type FullCampaign } from '../lib/campaigns';
-import { claimFunds } from '../lib/stacks';
+import { claimFunds, endorseCampaign, fetchHasEndorsed, postCampaignUpdate } from '../lib/stacks';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { ACTIVE_NETWORK } from '../lib/constants';
+import { uploadJSONToIPFS } from '../lib/ipfs';
 
 const stacksExplorerChain = ACTIVE_NETWORK === 'testnet' ? '?chain=testnet' : '';
 
@@ -34,10 +38,15 @@ export function CampaignPage() {
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  const [hasEndorsed, setHasEndorsed] = useState(false);
+  const [endorsing, setEndorsing] = useState(false);
+  const [updateTitle, setUpdateTitle] = useState('');
+  const [updateBody, setUpdateBody] = useState('');
+  const [postingUpdate, setPostingUpdate] = useState(false);
 
   useEffect(() => {
     loadCampaign();
-  }, [id]);
+  }, [id, stxAddress]);
 
   const loadCampaign = async () => {
     setLoading(true);
@@ -45,6 +54,7 @@ export function CampaignPage() {
       const campaignId = parseInt(id || '1');
       const data = await getFullCampaign(campaignId);
       setCampaign(data);
+      setHasEndorsed(await fetchHasEndorsed(campaignId, stxAddress ?? undefined));
     } catch (error) {
       console.error('Failed to load campaign:', error);
       toast.error('Failed to load campaign details');
@@ -98,6 +108,65 @@ export function CampaignPage() {
       toast.error(error.message || 'Failed to claim funds', { id: toastId });
     } finally {
       setClaiming(false);
+    }
+  };
+
+  const handleEndorse = async () => {
+    if (!campaign) return;
+    if (!connected) {
+      toast.error('Connect your Stacks wallet to endorse this campaign');
+      return;
+    }
+
+    setEndorsing(true);
+    const toastId = toast.loading('Submitting endorsement...');
+
+    try {
+      const result = await endorseCampaign(campaign.id);
+      console.log('Endorsement transaction:', result.txId);
+      setHasEndorsed(true);
+      toast.success('Campaign endorsed!', { id: toastId });
+      setTimeout(loadCampaign, 3000);
+    } catch (error: any) {
+      console.error('Failed to endorse campaign:', error);
+      toast.error(error.message || 'Failed to endorse campaign', { id: toastId });
+    } finally {
+      setEndorsing(false);
+    }
+  };
+
+  const handlePostUpdate = async () => {
+    if (!campaign) return;
+    if (!updateTitle.trim() || !updateBody.trim()) {
+      toast.error('Add both an update title and details');
+      return;
+    }
+
+    setPostingUpdate(true);
+    const toastId = toast.loading('Uploading update...');
+
+    try {
+      const ipfsHash = await uploadJSONToIPFS(
+        {
+          title: updateTitle.trim(),
+          body: updateBody.trim(),
+          createdAt: Date.now(),
+        },
+        `impact-x-campaign-${campaign.id}-update-${Date.now()}`
+      );
+
+      toast.loading('Posting update on-chain...', { id: toastId });
+      const result = await postCampaignUpdate(campaign.id, ipfsHash);
+      console.log('Campaign update transaction:', result.txId);
+      setUpdateTitle('');
+      setUpdateBody('');
+      toast.success('Update posted!', { id: toastId });
+      setTimeout(loadCampaign, 3000);
+    } catch (error: any) {
+      console.error('Failed to post update:', error);
+      toast.error(error.message || 'Failed to post update', { id: toastId });
+    } finally {
+      setPostingUpdate(false);
     }
   };
 
@@ -203,6 +272,73 @@ export function CampaignPage() {
             </div>
           )}
 
+          {/* Creator Updates */}
+          <div className="glass-card p-8">
+            <h2 className="text-xl font-heading font-bold text-dark-100 mb-6 flex items-center gap-2 border-b border-white/5 pb-4">
+              <MessageSquare className="w-5 h-5 text-primary-400" />
+              Creator Updates
+            </h2>
+
+            {isOwner && (
+              <div className="mb-8 p-5 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-dark-200 mb-2">Update title</label>
+                  <input
+                    value={updateTitle}
+                    onChange={(event) => setUpdateTitle(event.target.value.slice(0, 80))}
+                    className="input-field w-full"
+                    placeholder="New milestone reached"
+                    maxLength={80}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-dark-200 mb-2">Update details</label>
+                  <textarea
+                    value={updateBody}
+                    onChange={(event) => setUpdateBody(event.target.value.slice(0, 1000))}
+                    className="input-field w-full min-h-32 resize-none"
+                    placeholder="Share what changed, what shipped, or what supporters should know."
+                    maxLength={1000}
+                  />
+                  <div className="text-xs text-dark-500 text-right mt-1">{updateBody.length}/1000</div>
+                </div>
+                <button
+                  onClick={handlePostUpdate}
+                  disabled={postingUpdate}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  {postingUpdate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Post Update
+                </button>
+              </div>
+            )}
+
+            {campaign.updates.length > 0 ? (
+              <div className="space-y-4">
+                {campaign.updates.map(update => (
+                  <article key={update.id} className="p-5 rounded-xl bg-dark-800/60 border border-white/5">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <h3 className="font-heading font-semibold text-dark-100">{update.title}</h3>
+                      <span className="text-xs text-dark-500 whitespace-nowrap">Update #{update.id}</span>
+                    </div>
+                    <p className="text-dark-300 whitespace-pre-wrap leading-relaxed">{update.body}</p>
+                    <a
+                      href={`https://ipfs.io/ipfs/${update.ipfsHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary-400 hover:text-primary-300 mt-4"
+                    >
+                      View IPFS record
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="text-dark-400">No creator updates yet.</p>
+            )}
+          </div>
+
           {/* Recent Supporters */}
           <div className="glass-card p-8">
             <h2 className="text-xl font-heading font-bold text-dark-100 mb-6 flex items-center justify-between">
@@ -268,11 +404,16 @@ export function CampaignPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-3 gap-3 mb-8">
               <div className="flex flex-col p-4 rounded-xl bg-white/5 border border-white/5">
                 <Users className="w-5 h-5 text-secondary-400 mb-2" />
                 <div className="font-heading font-bold text-2xl text-dark-100">{campaign.backers}</div>
                 <div className="text-xs text-dark-500 uppercase tracking-wider">Backers</div>
+              </div>
+              <div className="flex flex-col p-4 rounded-xl bg-white/5 border border-white/5">
+                <Heart className="w-5 h-5 text-pink-400 mb-2" />
+                <div className="font-heading font-bold text-2xl text-dark-100">{campaign.endorsements}</div>
+                <div className="text-xs text-dark-500 uppercase tracking-wider">Endorse</div>
               </div>
               <div className="flex flex-col p-4 rounded-xl bg-white/5 border border-white/5">
                 <Clock className="w-5 h-5 text-primary-400 mb-2" />
@@ -328,6 +469,15 @@ export function CampaignPage() {
                 Campaign ended
               </div>
             )}
+
+            <button
+              onClick={handleEndorse}
+              disabled={endorsing || hasEndorsed}
+              className="w-full btn-secondary flex items-center justify-center gap-2 mt-4"
+            >
+              {endorsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className="w-4 h-4" />}
+              {hasEndorsed ? 'Endorsed' : 'Endorse Campaign'}
+            </button>
 
             {isOwner && !campaign.claimed && (
               <button

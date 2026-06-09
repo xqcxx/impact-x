@@ -33,6 +33,38 @@ function getContractId(): `${string}.${string}` {
   return `${contractAddress}.${CONTRACT_NAME}` as `${string}.${string}`;
 }
 
+function extractValue(value: any) {
+  if (value && typeof value === 'object' && 'value' in value) {
+    return value.value;
+  }
+
+  return value;
+}
+
+async function callReadOnly(functionName: string, functionArgs: string[]) {
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
+
+  const response = await fetch(
+    `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/${functionName}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender: contractAddress,
+        arguments: functionArgs,
+      }),
+    }
+  );
+
+  const data = await response.json();
+  if (!data.okay || !data.result) {
+    return null;
+  }
+
+  return cvToValue(hexToCV(data.result));
+}
+
 export interface CampaignData {
   id: number;
   owner: string;
@@ -43,6 +75,13 @@ export interface CampaignData {
   claimed: boolean;
   createdAt: number;
   refundEnabled: boolean;
+}
+
+export interface CampaignUpdate {
+  id: number;
+  author: string;
+  ipfsHash: string;
+  createdAt: number;
 }
 
 /**
@@ -162,6 +201,129 @@ export async function updateCampaignMetadata(
   });
 
   return { txId: (result as any).txid ?? '' };
+}
+
+/**
+ * Endorse a campaign once from the connected wallet
+ */
+export async function endorseCampaign(campaignId: number): Promise<{ txId: string }> {
+  const result = await request('stx_callContract', {
+    contract: getContractId(),
+    functionName: 'endorse-campaign',
+    functionArgs: [Cl.uint(campaignId)],
+    network: ACTIVE_NETWORK === 'testnet' ? 'testnet' : 'mainnet',
+  });
+
+  return { txId: (result as any).txid ?? '' };
+}
+
+/**
+ * Post a creator update using an IPFS metadata hash
+ */
+export async function postCampaignUpdate(
+  campaignId: number,
+  ipfsHash: string
+): Promise<{ txId: string }> {
+  if (ipfsHash.length > 64) {
+    throw new Error('IPFS CID is too long for the campaign contract. Please use a CIDv0-compatible Pinata upload.');
+  }
+
+  const result = await request('stx_callContract', {
+    contract: getContractId(),
+    functionName: 'post-campaign-update',
+    functionArgs: [
+      Cl.uint(campaignId),
+      Cl.stringAscii(ipfsHash),
+    ],
+    network: ACTIVE_NETWORK === 'testnet' ? 'testnet' : 'mainnet',
+  });
+
+  return { txId: (result as any).txid ?? '' };
+}
+
+export async function fetchEndorsementCount(campaignId: number): Promise<number> {
+  try {
+    const value = await callReadOnly('get-endorsement-count', [Cl.serialize(Cl.uint(campaignId))]);
+    const count = extractValue((value as any)?.count ?? 0);
+
+    return Number(count);
+  } catch (error) {
+    console.error('Failed to fetch endorsement count:', error);
+    return 0;
+  }
+}
+
+export async function fetchHasEndorsed(campaignId: number, endorser?: string): Promise<boolean> {
+  if (!endorser) return false;
+
+  try {
+    const value = await callReadOnly('has-endorsed', [
+      Cl.serialize(Cl.uint(campaignId)),
+      Cl.serialize(Cl.principal(endorser)),
+    ]);
+
+    return extractValue(value) === true;
+  } catch (error) {
+    console.error('Failed to fetch endorsement status:', error);
+    return false;
+  }
+}
+
+export async function fetchCampaignUpdateCount(campaignId: number): Promise<number> {
+  try {
+    const value = await callReadOnly('get-campaign-update-count', [Cl.serialize(Cl.uint(campaignId))]);
+    const count = extractValue((value as any)?.count ?? 0);
+
+    return Number(count);
+  } catch (error) {
+    console.error('Failed to fetch campaign update count:', error);
+    return 0;
+  }
+}
+
+export async function fetchCampaignUpdate(
+  campaignId: number,
+  updateId: number
+): Promise<CampaignUpdate | null> {
+  try {
+    const value = await callReadOnly('get-campaign-update', [
+      Cl.serialize(Cl.uint(campaignId)),
+      Cl.serialize(Cl.uint(updateId)),
+    ]);
+
+    if (!value) return null;
+
+    const update = extractValue(value) as {
+      author: string;
+      'ipfs-hash': string;
+      'created-at': bigint | number;
+    };
+
+    if (!update || typeof update !== 'object' || !('ipfs-hash' in update)) {
+      return null;
+    }
+
+    return {
+      id: updateId,
+      author: extractValue(update.author),
+      ipfsHash: extractValue(update['ipfs-hash']),
+      createdAt: Number(extractValue(update['created-at'])),
+    };
+  } catch (error) {
+    console.error('Failed to fetch campaign update:', error);
+    return null;
+  }
+}
+
+export async function fetchCampaignUpdates(campaignId: number): Promise<CampaignUpdate[]> {
+  const count = await fetchCampaignUpdateCount(campaignId);
+  if (count === 0) return [];
+
+  const updates = await Promise.all(
+    Array.from({ length: count }, (_, index) => fetchCampaignUpdate(campaignId, index + 1))
+  );
+
+  return updates.filter((update): update is CampaignUpdate => update !== null).reverse();
 }
 
 /**
@@ -486,14 +648,6 @@ function parseCampaignResponse(result: string, campaignId: number): CampaignData
     console.log(`[parseCampaignResponse] IPFS hash (raw):`, campaign['ipfs-hash']);
     console.log(`[parseCampaignResponse] Goal (raw):`, campaign.goal, 'type:', typeof campaign.goal);
     console.log(`[parseCampaignResponse] Raised (raw):`, campaign.raised, 'type:', typeof campaign.raised);
-
-    // Extract string values from Clarity types if needed
-    const extractValue = (val: any) => {
-      if (val && typeof val === 'object' && 'value' in val) {
-        return val.value;
-      }
-      return val;
-    };
 
     const ipfsHash = extractValue(campaign['ipfs-hash']);
     const owner = extractValue(campaign.owner);

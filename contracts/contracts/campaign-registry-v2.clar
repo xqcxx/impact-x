@@ -36,6 +36,7 @@
 (define-constant ERR_ALREADY_REFUNDED (err u109))
 (define-constant ERR_REFUND_NOT_AVAILABLE (err u110))
 (define-constant ERR_GOAL_ALREADY_MET (err u111))
+(define-constant ERR_ALREADY_ENDORSED (err u112))
 
 ;; Platform fee: 5% (500 basis points)
 (define-constant PLATFORM_FEE_BPS u500)
@@ -91,6 +92,34 @@
   { total-refunded: uint, refund-count: uint }
 )
 
+;; Track one endorsement per principal per campaign
+(define-map campaign-endorsements
+  { campaign-id: uint, endorser: principal }
+  { endorsed-at: uint }
+)
+
+;; Track endorsement totals
+(define-map campaign-endorsement-counts
+  { campaign-id: uint }
+  { count: uint }
+)
+
+;; Track creator update totals
+(define-map campaign-update-counts
+  { campaign-id: uint }
+  { count: uint }
+)
+
+;; Track creator updates by IPFS metadata hash
+(define-map campaign-updates
+  { campaign-id: uint, update-id: uint }
+  {
+    author: principal,
+    ipfs-hash: (string-ascii 64),
+    created-at: uint
+  }
+)
+
 ;; ============================================
 ;; Read-Only Functions
 ;; ============================================
@@ -116,6 +145,24 @@
 (define-read-only (get-refund-stats (campaign-id uint))
   (default-to { total-refunded: u0, refund-count: u0 }
     (map-get? refund-tracker { campaign-id: campaign-id }))
+)
+
+(define-read-only (has-endorsed (campaign-id uint) (endorser principal))
+  (is-some (map-get? campaign-endorsements { campaign-id: campaign-id, endorser: endorser }))
+)
+
+(define-read-only (get-endorsement-count (campaign-id uint))
+  (default-to { count: u0 }
+    (map-get? campaign-endorsement-counts { campaign-id: campaign-id }))
+)
+
+(define-read-only (get-campaign-update-count (campaign-id uint))
+  (default-to { count: u0 }
+    (map-get? campaign-update-counts { campaign-id: campaign-id }))
+)
+
+(define-read-only (get-campaign-update (campaign-id uint) (update-id uint))
+  (map-get? campaign-updates { campaign-id: campaign-id, update-id: update-id })
 )
 
 (define-read-only (is-goal-met (campaign-id uint))
@@ -197,6 +244,8 @@
     
     (map-set campaign-backers { campaign-id: new-id } { count: u0 })
     (map-set refund-tracker { campaign-id: new-id } { total-refunded: u0, refund-count: u0 })
+    (map-set campaign-endorsement-counts { campaign-id: new-id } { count: u0 })
+    (map-set campaign-update-counts { campaign-id: new-id } { count: u0 })
     
     (var-set campaign-counter new-id)
     
@@ -210,6 +259,67 @@
     })
     
     (ok new-id)
+  )
+)
+
+;; Endorse a campaign once per principal
+(define-public (endorse-campaign (campaign-id uint))
+  (let (
+    (campaign (unwrap! (map-get? campaigns { id: campaign-id }) ERR_CAMPAIGN_NOT_FOUND))
+    (current-count (get count (get-endorsement-count campaign-id)))
+  )
+    (asserts! (not (has-endorsed campaign-id tx-sender)) ERR_ALREADY_ENDORSED)
+
+    (map-set campaign-endorsements { campaign-id: campaign-id, endorser: tx-sender }
+      { endorsed-at: stacks-block-height }
+    )
+
+    (map-set campaign-endorsement-counts { campaign-id: campaign-id }
+      { count: (+ current-count u1) }
+    )
+
+    (print {
+      event: "campaign-endorsed",
+      campaign-id: campaign-id,
+      endorser: tx-sender,
+      new-count: (+ current-count u1),
+      owner: (get owner campaign)
+    })
+
+    (ok true)
+  )
+)
+
+;; Post a creator update by IPFS metadata hash
+(define-public (post-campaign-update (campaign-id uint) (ipfs-hash (string-ascii 64)))
+  (let (
+    (campaign (unwrap! (map-get? campaigns { id: campaign-id }) ERR_CAMPAIGN_NOT_FOUND))
+    (current-count (get count (get-campaign-update-count campaign-id)))
+    (new-update-id (+ current-count u1))
+  )
+    (asserts! (is-eq tx-sender (get owner campaign)) ERR_NOT_OWNER)
+
+    (map-set campaign-updates { campaign-id: campaign-id, update-id: new-update-id }
+      {
+        author: tx-sender,
+        ipfs-hash: ipfs-hash,
+        created-at: stacks-block-height
+      }
+    )
+
+    (map-set campaign-update-counts { campaign-id: campaign-id }
+      { count: new-update-id }
+    )
+
+    (print {
+      event: "campaign-update-posted",
+      campaign-id: campaign-id,
+      update-id: new-update-id,
+      author: tx-sender,
+      ipfs-hash: ipfs-hash
+    })
+
+    (ok new-update-id)
   )
 )
 

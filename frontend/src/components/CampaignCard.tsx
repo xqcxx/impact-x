@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ProgressBar } from './ProgressBar';
-import { Clock, Users, ArrowUpRight } from 'lucide-react';
+import { Clock, Users, ArrowUpRight, Heart } from 'lucide-react';
 
 export interface Campaign {
   id: number;
@@ -10,6 +10,7 @@ export interface Campaign {
   goal: number;
   raised: number;
   backers: number;
+  endorsements?: number;
   daysLeft: number;
   category: string;
   owner: string;
@@ -93,10 +94,14 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         </div>
 
         {/* Stats */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 text-sm text-dark-400">
             <Users className="w-4 h-4 text-secondary-400" />
             <span>{campaign.backers} backers</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-dark-400">
+            <Heart className="w-4 h-4 text-pink-400" />
+            <span>{campaign.endorsements || 0}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-dark-400">
             <Clock className="w-4 h-4 text-primary-400" />
