@@ -1,5 +1,5 @@
 import { parseUnits, type Hex } from 'viem';
-import { c32addressDecode } from 'c32check';
+import { encodeStacksAddress } from './helpers';
 
 // Contract Addresses & Config
 export const BRIDGE_CONFIG = {
@@ -94,14 +94,7 @@ export interface BridgeResult {
  * Convert Stacks Address to bytes32 format required by xReserve
  */
 export function stacksAddressToBytes32(stacksAddress: string): Hex {
-  const [version, hash160] = c32addressDecode(stacksAddress);
-  
-  // Pad to 32 bytes: version (1 byte) + hash160 (20 bytes) + padding (11 bytes)
-  const versionHex = version.toString(16).padStart(2, '0');
-  const paddedHash = hash160.padStart(40, '0');
-  const padding = '0'.repeat(22); // 11 bytes of padding
-  
-  return `0x${padding}${versionHex}${paddedHash}` as Hex;
+  return encodeStacksAddress(stacksAddress);
 }
 
 /**

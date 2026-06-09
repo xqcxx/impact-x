@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast';
 import { 
   ArrowLeft, 
   Share2, 
-  Heart, 
   Clock, 
   Users, 
   ExternalLink,
@@ -13,7 +12,8 @@ import {
   DollarSign,
   Loader2,
   ArrowDownCircle,
-  Twitter
+  Twitter,
+  Lock
 } from 'lucide-react';
 import { ProgressBar } from '../components/ProgressBar';
 import { DonateModal } from '../components/DonateModal';
@@ -22,6 +22,9 @@ import { truncateAddress } from '../lib/helpers';
 import { getFullCampaign, type FullCampaign } from '../lib/campaigns';
 import { claimFunds } from '../lib/stacks';
 import { useStacksWallet } from '../hooks/useStacksWallet';
+import { ACTIVE_NETWORK } from '../lib/constants';
+
+const stacksExplorerChain = ACTIVE_NETWORK === 'testnet' ? '?chain=testnet' : '';
 
 export function CampaignPage() {
   const { id } = useParams<{ id: string }>();
@@ -226,7 +229,7 @@ export function CampaignPage() {
                   {isOwner && <span className="ml-2 text-primary-400 font-bold">(You)</span>}
                 </p>
                 <a
-                  href={`https://explorer.hiro.so/address/${campaign.owner}?chain=testnet`}
+                  href={`https://explorer.hiro.so/address/${campaign.owner}${stacksExplorerChain}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1 transition-colors"
@@ -242,7 +245,7 @@ export function CampaignPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Funding Card */}
-          <div className="glass-card p-6 sticky top-28 border-t-4 border-t-primary-500">
+          <div className="glass-card p-6 border-t-4 border-t-primary-500">
             {/* Amount Raised */}
             <div className="mb-6">
               <div className="text-4xl font-heading font-bold text-dark-100 mb-1">

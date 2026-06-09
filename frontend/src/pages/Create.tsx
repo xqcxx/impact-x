@@ -91,8 +91,8 @@ export function CreatePage() {
         toast.error(msg);
         return false;
       }
-      if (!goal || parseFloat(goal) < 100) {
-        const msg = 'Goal must be at least $100';
+      if (!goal || parseFloat(goal) < 10) {
+        const msg = 'Goal must be at least $10';
         setError(msg);
         toast.error(msg);
         return false;
@@ -130,10 +130,11 @@ export function CreatePage() {
       return;
     }
 
+    const toastId = toast.loading('Creating your campaign...');
+
     try {
       setLoading(true);
       setError(null);
-      const toastId = toast.loading('Creating your campaign...');
 
       // Upload image if provided
       let imageUrl = 'https://via.placeholder.com/800x400?text=Campaign';
@@ -163,7 +164,8 @@ export function CreatePage() {
       const result = await createCampaign(
         ipfsHash,
         parseFloat(goal),
-        parseInt(duration)
+        parseInt(duration),
+        stxAddress
       );
 
       console.log('Campaign created:', result);
@@ -179,8 +181,7 @@ export function CreatePage() {
       console.error('Failed to create campaign:', err);
       const msg = err.message || 'Failed to create campaign';
       setError(msg);
-      toast.error(msg);
-      toast.dismiss();
+      toast.error(msg, { id: toastId });
     } finally {
       setLoading(false);
     }

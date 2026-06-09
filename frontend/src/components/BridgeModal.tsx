@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, CheckCircle, ArrowRight, Wallet, ExternalLink, RefreshCw } from 'lucide-react';
-import { useAccount, useConnect } from 'wagmi';
+import { useAccount, useChainId, useConnect, useSwitchChain } from 'wagmi';
+import { mainnet, sepolia } from 'wagmi/chains';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { useBridge } from '../hooks/useBridge';
+import { ACTIVE_NETWORK } from '../lib/constants';
 
 interface BridgeModalProps {
   isOpen: boolean;
@@ -24,13 +26,16 @@ export function BridgeModal({
   // Ethereum Wallet
   const { isConnected: isEthConnected, address: ethAddress } = useAccount();
   const { connect, connectors } = useConnect();
-  // removed unused disconnect
+  const chainId = useChainId();
+  const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
 
   // Stacks Wallet (Recipient)
   const { connected: isStxConnected, stxAddress, connect: connectStx } = useStacksWallet();
 
   // Bridge Hook
   const { bridge, checkStatus, status, error, txHash, reset } = useBridge();
+  const requiredChain = ACTIVE_NETWORK === 'testnet' ? sepolia : mainnet;
+  const onRequiredChain = chainId === requiredChain.id;
 
   // Reset state when modal opens
   useEffect(() => {
@@ -60,6 +65,10 @@ export function BridgeModal({
 
   const handleBridge = async () => {
     if (!amount || !isStxConnected || !stxAddress) return;
+
+    if (!onRequiredChain) {
+      await switchChainAsync({ chainId: requiredChain.id });
+    }
     
     // 1. Execute Bridge Transaction
     const result = await bridge(amount, stxAddress);
@@ -81,7 +90,7 @@ export function BridgeModal({
       const success = await checkStatus(hookData);
       
       if (success) {
-        if (onSuccess) onSuccess();
+        return;
       } else if (attempts < MAX_ATTEMPTS) {
         pollTimerRef.current = setTimeout(check, 10000); // Check every 10s
       } else {
@@ -97,6 +106,11 @@ export function BridgeModal({
     if (status !== 'approving' && status !== 'depositing' && status !== 'polling') {
       onClose();
     }
+  };
+
+  const handleContinue = () => {
+    onSuccess?.();
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -155,7 +169,7 @@ export function BridgeModal({
 
               {txHash && (
                 <a
-                  href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                  href={`${requiredChain.blockExplorers?.default.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 text-sm mb-6"
@@ -165,7 +179,7 @@ export function BridgeModal({
               )}
 
               {status === 'success' && (
-                <button onClick={onClose} className="btn-primary w-full">
+                <button onClick={handleContinue} className="btn-primary w-full">
                   Continue to Donate
                 </button>
               )}
@@ -181,7 +195,7 @@ export function BridgeModal({
                       <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=026" className="w-5 h-5" alt="ETH" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xs text-dark-400">From (Sepolia)</div>
+                      <div className="text-xs text-dark-400">From ({requiredChain.name})</div>
                       <div className="text-sm font-medium text-dark-200">
                         {isEthConnected ? `${ethAddress?.slice(0,6)}...${ethAddress?.slice(-4)}` : 'Not Connected'}
                       </div>
@@ -193,6 +207,15 @@ export function BridgeModal({
                       className="px-3 py-1.5 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
                     >
                       Connect
+                    </button>
+                  )}
+                  {isEthConnected && !onRequiredChain && (
+                    <button 
+                      onClick={() => switchChainAsync({ chainId: requiredChain.id })}
+                      disabled={isSwitchingChain}
+                      className="px-3 py-1.5 text-xs font-medium bg-yellow-500/10 text-yellow-400 rounded-lg hover:bg-yellow-500/20 disabled:opacity-50"
+                    >
+                      Switch
                     </button>
                   )}
                 </div>
@@ -257,13 +280,14 @@ export function BridgeModal({
               {/* Action Button */}
               <button
                 onClick={handleBridge}
-                disabled={!isEthConnected || !isStxConnected || !amount || status !== 'idle' && status !== 'error'}
+                disabled={!isEthConnected || !isStxConnected || !amount || isSwitchingChain || status !== 'idle' && status !== 'error'}
                 className="w-full btn-primary py-3 flex items-center justify-center gap-2"
               >
+                {isSwitchingChain && `Switching to ${requiredChain.name}...`}
                 {status === 'checking' && 'Checking Balance...'}
                 {status === 'approving' && 'Approving USDC...'}
                 {status === 'depositing' && 'Initiating Transfer...'}
-                {(status === 'idle' || status === 'error') && (
+                {(status === 'idle' || status === 'error') && !isSwitchingChain && (
                   <>
                     <Wallet className="w-5 h-5" />
                     Bridge to Stacks

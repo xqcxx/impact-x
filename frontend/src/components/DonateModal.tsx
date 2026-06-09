@@ -5,6 +5,9 @@ import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from 
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { donate } from '../lib/stacks';
 import { BridgeModal } from './BridgeModal';
+import { ACTIVE_NETWORK } from '../lib/constants';
+
+const stacksExplorerChain = ACTIVE_NETWORK === 'testnet' ? '?chain=testnet' : '';
 
 interface DonateModalProps {
   isOpen: boolean;
@@ -130,7 +133,7 @@ export function DonateModal({
         defaultAmount={amount}
         onSuccess={() => {
           setShowBridge(false);
-          // Optional: Auto-fill amount or show success message
+          toast.success('USDCx minted to your Stacks wallet. You can now confirm the donation.');
         }}
       />
     );
@@ -176,7 +179,7 @@ export function DonateModal({
               </p>
               {txId && (
                 <a
-                  href={`https://explorer.hiro.so/txid/${txId}?chain=testnet`}
+                  href={`https://explorer.hiro.so/txid/${txId}${stacksExplorerChain}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary-400 hover:text-primary-300 text-sm underline"
@@ -234,7 +237,7 @@ export function DonateModal({
                     className="w-full btn-secondary flex items-center justify-center gap-2 mt-4"
                   >
                     <ArrowRightLeft className="w-4 h-4" />
-                    Bridge USDC from Ethereum
+                    Bridge USDC first
                   </button>
                 </div>
               ) : (
@@ -258,7 +261,7 @@ export function DonateModal({
                         className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
                       >
                         <ArrowRightLeft className="w-3 h-3" />
-                        Need USDCx? Bridge
+                        Need USDCx? Bridge first
                       </button>
                     </div>
                     

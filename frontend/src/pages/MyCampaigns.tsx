@@ -17,9 +17,9 @@ import {
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { ProgressBar } from '../components/ProgressBar';
 import { EditCampaignModal } from '../components/EditCampaignModal';
-import { CampaignCardSkeleton } from '../components/Skeleton';
 import { getCampaignsByOwner, type FullCampaign } from '../lib/campaigns';
 import { claimFunds } from '../lib/stacks';
+import { getStacksNetwork } from '../lib/constants';
 
 export function MyCampaignsPage() {
   const { connected, connect, stxAddress } = useStacksWallet();
@@ -341,7 +341,7 @@ export function MyCampaignsPage() {
               donors can request refunds.
             </p>
             <a 
-              href="https://explorer.hiro.so/?chain=testnet"
+              href={getStacksNetwork().explorerUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-primary-400 font-medium hover:text-primary-300 transition-colors"

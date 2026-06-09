@@ -7,6 +7,7 @@ import {
   checkMintStatus,
   type BridgeResult 
 } from '../lib/bridge';
+import { ACTIVE_NETWORK } from '../lib/constants';
 
 export type BridgeStatus = 
   | 'idle' 
@@ -37,8 +38,7 @@ export function useBridge(): UseBridgeReturn {
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const getNetwork = () => {
-    // Sepolia chain ID is 11155111
-    return chainId === 11155111 ? 'sepolia' : 'mainnet';
+    return ACTIVE_NETWORK === 'testnet' ? 'sepolia' : 'mainnet';
   };
 
   const reset = useCallback(() => {
@@ -48,11 +48,13 @@ export function useBridge(): UseBridgeReturn {
   }, []);
 
   const checkStatus = useCallback(async (hookData: string): Promise<boolean> => {
-    // Determine network based on current chain
     const network = getNetwork() === 'sepolia' ? 'testnet' : 'mainnet';
     const result = await checkMintStatus(hookData, network);
+    if (result.success) {
+      setStatus('success');
+    }
     return result.success;
-  }, [chainId]);
+  }, []);
 
   const bridge = useCallback(async (
     amount: string,

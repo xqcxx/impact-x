@@ -3,6 +3,9 @@ import { User, Clock, ExternalLink } from 'lucide-react';
 import { fetchCampaignDonations, type DonationEvent } from '../lib/stacks';
 import { truncateAddress } from '../lib/helpers';
 import { Skeleton } from './Skeleton';
+import { ACTIVE_NETWORK } from '../lib/constants';
+
+const stacksExplorerChain = ACTIVE_NETWORK === 'testnet' ? '?chain=testnet' : '';
 
 interface DonationListProps {
   campaignId: number;
@@ -73,7 +76,7 @@ export function DonationList({ campaignId }: DonationListProps) {
               <div className="font-medium text-dark-200 flex items-center gap-2">
                 {truncateAddress(donation.donor)}
                 <a 
-                  href={`https://explorer.hiro.so/txid/${donation.txId}?chain=testnet`}
+                  href={`https://explorer.hiro.so/txid/${donation.txId}${stacksExplorerChain}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-dark-500 hover:text-primary-400"

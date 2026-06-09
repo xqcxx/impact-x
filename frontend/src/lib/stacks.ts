@@ -1,16 +1,37 @@
 import { request } from '@stacks/connect';
 import { Cl, cvToValue, hexToCV } from '@stacks/transactions';
-import { ACTIVE_NETWORK } from './constants';
+import { ACTIVE_NETWORK, getStacksNetwork } from './constants';
 
 // Campaign registry V2 contract address
-const CONTRACT_ADDRESS = ACTIVE_NETWORK === 'testnet' 
-  ? 'STZ5Q1C2GVSMCWS9NWVDEKHNW04THC75SEGDHS74'
-  : 'SP...'; // Mainnet address
+const CONTRACT_ADDRESSES = {
+  testnet: import.meta.env.VITE_TESTNET_CAMPAIGN_CONTRACT_ADDRESS || 'STZ5Q1C2GVSMCWS9NWVDEKHNW04THC75SEGDHS74',
+  mainnet: import.meta.env.VITE_MAINNET_CAMPAIGN_CONTRACT_ADDRESS || '',
+} as const;
+
+const CONTRACT_ADDRESS = CONTRACT_ADDRESSES[ACTIVE_NETWORK];
 
 const CONTRACT_NAME = 'campaign-registry-v2';
 
-// USDCx token contract on testnet
-const USDCX_CONTRACT = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.usdcx';
+const USDCX_CONTRACTS = {
+  testnet: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.usdcx',
+  mainnet: 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx',
+} as const;
+
+const USDCX_CONTRACT = USDCX_CONTRACTS[ACTIVE_NETWORK];
+
+function getContractAddress() {
+  if (!CONTRACT_ADDRESS) {
+    throw new Error('Missing campaign registry contract address. Set VITE_MAINNET_CAMPAIGN_CONTRACT_ADDRESS for mainnet.');
+  }
+
+  return CONTRACT_ADDRESS;
+}
+
+function getContractId(): `${string}.${string}` {
+  const contractAddress = getContractAddress();
+
+  return `${contractAddress}.${CONTRACT_NAME}` as `${string}.${string}`;
+}
 
 export interface CampaignData {
   id: number;
@@ -30,14 +51,19 @@ export interface CampaignData {
 export async function createCampaign(
   ipfsHash: string,
   goalInUSDC: number,
-  durationInDays: number
+  durationInDays: number,
+  address?: string
 ): Promise<{ txId: string }> {
+  if (ipfsHash.length > 64) {
+    throw new Error('IPFS CID is too long for the campaign contract. Please use a CIDv0-compatible Pinata upload.');
+  }
+
   const goalMicro = Math.floor(goalInUSDC * 1_000_000);
   const blocksPerDay = 144;
   const durationBlocks = durationInDays * blocksPerDay;
 
   const result = await request('stx_callContract', {
-    contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    contract: getContractId(),
     functionName: 'create-campaign',
     functionArgs: [
       Cl.stringAscii(ipfsHash),
@@ -45,6 +71,7 @@ export async function createCampaign(
       Cl.uint(durationBlocks),
     ],
     network: ACTIVE_NETWORK === 'testnet' ? 'testnet' : 'mainnet',
+    address,
   });
 
   return { txId: (result as any).txid ?? '' };
@@ -61,7 +88,7 @@ export async function donate(
   const amountMicro = Math.floor(amountInUSDC * 1_000_000);
 
   const result = await request('stx_callContract', {
-    contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    contract: getContractId(),
     functionName: 'donate',
     functionArgs: [
       Cl.uint(campaignId),
@@ -82,7 +109,7 @@ export async function donate(
  */
 export async function claimFunds(campaignId: number): Promise<{ txId: string }> {
   const result = await request('stx_callContract', {
-    contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    contract: getContractId(),
     functionName: 'claim-funds',
     functionArgs: [
       Cl.uint(campaignId),
@@ -102,7 +129,7 @@ export async function claimFunds(campaignId: number): Promise<{ txId: string }> 
  */
 export async function requestRefund(campaignId: number): Promise<{ txId: string }> {
   const result = await request('stx_callContract', {
-    contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    contract: getContractId(),
     functionName: 'request-refund',
     functionArgs: [
       Cl.uint(campaignId),
@@ -125,7 +152,7 @@ export async function updateCampaignMetadata(
   newIpfsHash: string
 ): Promise<{ txId: string }> {
   const result = await request('stx_callContract', {
-    contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    contract: getContractId(),
     functionName: 'update-campaign-metadata',
     functionArgs: [
       Cl.uint(campaignId),
@@ -148,13 +175,12 @@ export interface DonationEvent {
 }
 
 export async function fetchCampaignDonations(campaignId: number): Promise<DonationEvent[]> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractId = getContractId();
 
   try {
     const response = await fetch(
-      `${apiUrl}/extended/v1/contract/${CONTRACT_ADDRESS}.${CONTRACT_NAME}/events?limit=50`
+      `${apiUrl}/extended/v1/contract/${contractId}/events?limit=50`
     );
 
     const data = await response.json();
@@ -164,7 +190,7 @@ export async function fetchCampaignDonations(campaignId: number): Promise<Donati
       for (const event of data.results) {
         if (
           event.event_type === 'smart_contract_log' &&
-          event.contract_log.contract_id === `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`
+          event.contract_log.contract_id === contractId
         ) {
           const repr = event.contract_log.value.repr;
           
@@ -204,19 +230,18 @@ export async function fetchCampaignDonations(campaignId: number): Promise<Donati
  * Fetch campaign from contract (read-only)
  */
 export async function fetchCampaign(campaignId: number): Promise<CampaignData | null> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
 
   try {
     console.log(`[fetchCampaign] Fetching campaign ${campaignId}...`);
     const response = await fetch(
-      `${apiUrl}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-campaign`,
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/get-campaign`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: CONTRACT_ADDRESS,
+          sender: contractAddress,
           arguments: [Cl.serialize(Cl.uint(campaignId))],
         }),
       }
@@ -243,18 +268,17 @@ export async function fetchCampaign(campaignId: number): Promise<CampaignData | 
  * Fetch total campaign count
  */
 export async function fetchCampaignCount(): Promise<number> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
 
   try {
     const response = await fetch(
-      `${apiUrl}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-campaign-count`,
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/get-campaign-count`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: CONTRACT_ADDRESS,
+          sender: contractAddress,
           arguments: [],
         }),
       }
@@ -283,19 +307,18 @@ export async function fetchCampaignCount(): Promise<number> {
  * Fetch backer count for a campaign
  */
 export async function fetchBackerCount(campaignId: number): Promise<number> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
 
   try {
     console.log(`[fetchBackerCount] Fetching backer count for campaign ${campaignId}...`);
     const response = await fetch(
-      `${apiUrl}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-backer-count`,
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/get-backer-count`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: CONTRACT_ADDRESS,
+          sender: contractAddress,
           arguments: [Cl.serialize(Cl.uint(campaignId))],
         }),
       }
@@ -345,18 +368,17 @@ export async function fetchBackerCount(campaignId: number): Promise<number> {
  * Check if user can request refund for a campaign
  */
 export async function canRefund(campaignId: number): Promise<boolean> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
 
   try {
     const response = await fetch(
-      `${apiUrl}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/can-refund`,
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/can-refund`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: CONTRACT_ADDRESS,
+          sender: contractAddress,
           arguments: [Cl.serialize(Cl.uint(campaignId))],
         }),
       }
@@ -381,18 +403,17 @@ export async function canRefund(campaignId: number): Promise<boolean> {
  * Get user's donation for a campaign
  */
 export async function getDonation(campaignId: number, donor: string): Promise<{ amount: number; refunded: boolean }> {
-  const apiUrl = ACTIVE_NETWORK === 'testnet'
-    ? 'https://api.testnet.hiro.so'
-    : 'https://api.hiro.so';
+  const apiUrl = getStacksNetwork().apiUrl;
+  const contractAddress = getContractAddress();
 
   try {
     const response = await fetch(
-      `${apiUrl}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-donation`,
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${CONTRACT_NAME}/get-donation`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: CONTRACT_ADDRESS,
+          sender: contractAddress,
           arguments: [
             Cl.serialize(Cl.uint(campaignId)),
             Cl.serialize(Cl.principal(donor)),
@@ -528,9 +549,9 @@ export async function fetchCampaigns(startId: number, count: number): Promise<Ca
  */
 export function getContractInfo() {
   return {
-    address: CONTRACT_ADDRESS,
+    address: getContractAddress(),
     name: CONTRACT_NAME,
-    fullName: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+    fullName: getContractId(),
     usdcxContract: USDCX_CONTRACT,
   };
 }

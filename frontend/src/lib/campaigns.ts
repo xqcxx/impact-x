@@ -5,6 +5,7 @@
 
 import { fetchCampaign, fetchCampaignCount, fetchBackerCount } from './stacks';
 import { fetchFromIPFS, type CampaignMetadata } from './ipfs';
+import { getStacksNetwork } from './constants';
 
 // Combined campaign type with on-chain and off-chain data
 export interface FullCampaign {
@@ -43,7 +44,7 @@ async function getCurrentBlockHeight(): Promise<number> {
   }
 
   try {
-    const response = await fetch('https://api.testnet.hiro.so/v2/info');
+    const response = await fetch(`${getStacksNetwork().apiUrl}/v2/info`);
     const data = await response.json();
     cachedBlockHeight = data.stacks_tip_height as number;
     blockHeightFetchedAt = Date.now();

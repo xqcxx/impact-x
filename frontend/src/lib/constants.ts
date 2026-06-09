@@ -1,5 +1,9 @@
 // Network configuration constants
 
+export type ActiveNetwork = 'testnet' | 'mainnet';
+
+const configuredNetwork = import.meta.env.VITE_NETWORK;
+
 export const NETWORKS = {
   stacks: {
     testnet: {
@@ -29,8 +33,8 @@ export const NETWORKS = {
   },
 } as const;
 
-// Current active network (change this to switch networks)
-export const ACTIVE_NETWORK = 'testnet' as const;
+// Current active network. Defaults to testnet unless VITE_NETWORK=mainnet.
+export const ACTIVE_NETWORK: ActiveNetwork = configuredNetwork === 'mainnet' ? 'mainnet' : 'testnet';
 
 // Helper to get current network config
 export function getStacksNetwork() {
