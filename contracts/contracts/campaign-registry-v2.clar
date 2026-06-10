@@ -42,8 +42,8 @@
 (define-constant PLATFORM_FEE_BPS u500)
 (define-constant BPS_DENOMINATOR u10000)
 
-;; USDCx token contract (testnet)
-(define-constant USDCX_CONTRACT 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.usdcx)
+;; USDCx token contract (mainnet)
+(define-constant USDCX_CONTRACT 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)
 
 ;; ============================================
 ;; Data Variables

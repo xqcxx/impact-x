@@ -1,0 +1,8 @@
+[network]
+name = "mainnet"
+deployment_fee_rate = 50
+
+[accounts.deployer]
+mnemonic = "<YOUR 24-WORD MAINNET MNEMONIC>"
+balance = 100_000_000_000_000
+derivation = "m/44'/5757'/0'/0/0"
