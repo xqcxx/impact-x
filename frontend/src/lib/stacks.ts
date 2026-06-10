@@ -10,7 +10,7 @@ const CONTRACT_ADDRESSES = {
 
 const CONTRACT_ADDRESS = CONTRACT_ADDRESSES[ACTIVE_NETWORK];
 
-const CONTRACT_NAME = 'campaign-registry-v2';
+const CONTRACT_NAME = import.meta.env.VITE_CAMPAIGN_CONTRACT_NAME || 'campaign-registry-v2';
 
 const USDCX_CONTRACTS = {
   testnet: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.usdcx',

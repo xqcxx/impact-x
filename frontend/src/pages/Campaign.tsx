@@ -23,7 +23,7 @@ import { DonateModal } from '../components/DonateModal';
 import { DonationList } from '../components/DonationList';
 import { truncateAddress } from '../lib/helpers';
 import { getFullCampaign, type FullCampaign } from '../lib/campaigns';
-import { claimFunds, endorseCampaign, fetchHasEndorsed, postCampaignUpdate } from '../lib/stacks';
+import { claimFunds, endorseCampaign, fetchHasEndorsed, postCampaignUpdate, getContractInfo } from '../lib/stacks';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { ACTIVE_NETWORK } from '../lib/constants';
 import { uploadJSONToIPFS } from '../lib/ipfs';
@@ -534,7 +534,7 @@ export function CampaignPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-dark-400">Contract</span>
-                <span className="text-dark-200 font-mono">campaign-registry-v2</span>
+                <span className="text-dark-200 font-mono">{getContractInfo().name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-dark-400">IPFS Hash</span>
