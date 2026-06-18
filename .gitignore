@@ -45,3 +45,6 @@ contracts/.clarinet/
 coverage/
 .nyc_output/
 .vercel
+
+# Scripts
+scripts/
