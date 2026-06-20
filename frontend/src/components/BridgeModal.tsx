@@ -4,6 +4,7 @@ import { useAccount, useChainId, useConnect, useSwitchChain } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { useBridge } from '../hooks/useBridge';
+import { TransactionChecklist, type ChecklistStep } from './TransactionChecklist';
 import { ACTIVE_NETWORK } from '../lib/constants';
 
 interface BridgeModalProps {
@@ -36,6 +37,30 @@ export function BridgeModal({
   const { bridge, checkStatus, status, error, txHash, reset } = useBridge();
   const requiredChain = ACTIVE_NETWORK === 'testnet' ? sepolia : mainnet;
   const onRequiredChain = chainId === requiredChain.id;
+  const isBridging = status === 'checking' || status === 'approving' || status === 'depositing' || status === 'polling';
+
+  const bridgeSteps: ChecklistStep[] = [
+    {
+      title: `Connect Ethereum on ${requiredChain.name}`,
+      description: 'This wallet provides the USDC that will be deposited into Circle xReserve.',
+      status: isEthConnected && onRequiredChain ? 'complete' : 'active',
+    },
+    {
+      title: 'Connect Stacks recipient',
+      description: 'USDCx will be minted to this Stacks address after the bridge finalizes.',
+      status: isStxConnected ? 'complete' : isEthConnected && onRequiredChain ? 'active' : 'pending',
+    },
+    {
+      title: 'Approve and deposit USDC',
+      description: 'You may sign an approval first, then a deposit transaction on Ethereum.',
+      status: status === 'checking' || status === 'approving' || status === 'depositing' ? 'active' : txHash ? 'complete' : 'pending',
+    },
+    {
+      title: 'Mint USDCx on Stacks',
+      description: 'Validators finalize the transfer and mint USDCx to your Stacks wallet.',
+      status: status === 'success' ? 'complete' : status === 'polling' ? 'active' : 'pending',
+    },
+  ];
 
   // Reset state when modal opens
   useEffect(() => {
@@ -103,7 +128,7 @@ export function BridgeModal({
   };
 
   const handleClose = () => {
-    if (status !== 'approving' && status !== 'depositing' && status !== 'polling') {
+    if (!isBridging) {
       onClose();
     }
   };
@@ -163,9 +188,13 @@ export function BridgeModal({
               
               <p className="text-dark-400 mb-6">
                 {status === 'success' 
-                  ? 'Your USDCx has been minted on Stacks.' 
-                  : 'Waiting for Circle and Stacks validators to finalize the transfer (~15 mins).'}
+                  ? 'Your USDCx has been minted on Stacks and is ready for donation.' 
+                  : 'Waiting for Circle and Stacks validators to finalize the transfer. This can take 15-20 minutes.'}
               </p>
+
+              <div className="mb-6 text-left">
+                <TransactionChecklist title="Bridge status" steps={bridgeSteps} />
+              </div>
 
               {txHash && (
                 <a
@@ -188,6 +217,8 @@ export function BridgeModal({
             /* Input Form */
             <>
               {/* Step 1: Connect Wallets */}
+              <TransactionChecklist title="Bridge checklist" steps={bridgeSteps} />
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-dark-800 border border-dark-700">
                   <div className="flex items-center gap-3">
@@ -295,8 +326,8 @@ export function BridgeModal({
                 )}
               </button>
               
-              <p className="text-xs text-center text-dark-500">
-                Powered by Circle xReserve. Transfers typically take 15-20 minutes.
+              <p className="text-xs text-center text-dark-500 leading-relaxed">
+                Powered by Circle xReserve. Keep this modal open after deposit so Impact-X can detect when USDCx is minted.
               </p>
             </>
           )}
