@@ -5,6 +5,7 @@ import { X, Loader2, CheckCircle, AlertCircle, Zap, Lock, ArrowRightLeft } from 
 import { useStacksWallet } from '../hooks/useStacksWallet';
 import { donate } from '../lib/stacks';
 import { BridgeModal } from './BridgeModal';
+import { TransactionChecklist, type ChecklistStep } from './TransactionChecklist';
 import { ACTIVE_NETWORK } from '../lib/constants';
 
 const stacksExplorerChain = ACTIVE_NETWORK === 'testnet' ? '?chain=testnet' : '';
@@ -34,6 +35,29 @@ export function DonateModal({
   const [showBridge, setShowBridge] = useState(false);
   
   const { connected: stxConnected, connect: connectStx, stxAddress } = useStacksWallet();
+
+  const donationSteps: ChecklistStep[] = [
+    {
+      title: 'Connect Stacks wallet',
+      description: 'Your wallet signs the donation transaction with USDCx.',
+      status: stxConnected ? 'complete' : 'active',
+    },
+    {
+      title: 'Confirm donation',
+      description: 'Choose an amount and approve the transfer in your wallet.',
+      status: success ? 'complete' : donating ? 'active' : stxConnected ? 'active' : 'pending',
+    },
+    {
+      title: 'Funds enter escrow',
+      description: 'USDCx is held by the campaign smart contract until the campaign outcome is known.',
+      status: success ? 'complete' : 'pending',
+    },
+    {
+      title: 'Campaign settles',
+      description: 'Creators can claim only if the goal is met; otherwise supporters can request refunds after the deadline.',
+      status: 'pending',
+    },
+  ];
 
   // Reset when modal closes
   useEffect(() => {
@@ -210,6 +234,10 @@ export function DonateModal({
                 </div>
               </div>
 
+              <div className="mb-6">
+                <TransactionChecklist title="Donation protection checklist" steps={donationSteps} />
+              </div>
+
               {!stxConnected ? (
                 /* Connect Stacks Wallet */
                 <div className="text-center py-8">
@@ -281,6 +309,34 @@ export function DonateModal({
                     <p className="text-xs text-dark-500 mt-2">
                       Minimum: $1.00 USDCx
                     </p>
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      {['10', '25', '100'].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setAmount(preset)}
+                          disabled={donating}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+                            amount === preset
+                              ? 'border-primary-500/50 bg-primary-500/15 text-primary-300'
+                              : 'border-white/10 bg-white/5 text-dark-300 hover:border-white/20 hover:bg-white/10'
+                          }`}
+                        >
+                          ${preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                      <p className="text-dark-500 mb-1">If funded</p>
+                      <p className="text-dark-300">Creator can claim funds after success. A 5% platform fee is deducted then.</p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                      <p className="text-dark-500 mb-1">If not funded</p>
+                      <p className="text-dark-300">Your escrowed donation remains refundable after the campaign deadline.</p>
+                    </div>
                   </div>
 
                   {/* Error Message */}
@@ -310,9 +366,8 @@ export function DonateModal({
                     )}
                   </button>
 
-                  <p className="text-xs text-dark-500 mt-4 text-center">
-                    Your donation will be held in the smart contract until the campaign ends.
-                    5% platform fee applies only if the goal is met.
+                  <p className="text-xs text-dark-500 mt-4 text-center leading-relaxed">
+                    You only sign one Stacks transaction here. Need USDC on Stacks first? Use the bridge before donating.
                   </p>
                 </>
               )}
