@@ -25,6 +25,11 @@
     @apply scroll-smooth;
   }
 
+  :focus-visible {
+    outline: 2px solid #FF8A4C;
+    outline-offset: 3px;
+  }
+
   body {
     @apply bg-dark-950 text-dark-50 font-body antialiased;
     font-family: 'Exo 2', sans-serif;
