@@ -72,6 +72,8 @@ export function DonateModal({
   }, [isOpen]);
 
   const triggerConfetti = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const end = Date.now() + 2000;
     const colors = ['#FF6B1A', '#FF8A4C', '#ffffff'];
 
