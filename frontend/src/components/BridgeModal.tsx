@@ -146,13 +146,19 @@ export function BridgeModal({
       <div 
         className="absolute inset-0 bg-dark-900/90 backdrop-blur-md"
         onClick={handleClose}
+        aria-hidden="true"
       />
       
       {/* Modal */}
-      <div className="glass-card relative max-w-md w-full overflow-hidden animate-in border border-white/10 shadow-2xl">
+      <div
+        className="glass-card relative max-w-md w-full max-h-[90vh] overflow-y-auto animate-in border border-white/10 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bridge-modal-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
-          <h2 className="text-lg font-heading font-semibold text-dark-100 flex items-center gap-2">
+          <h2 id="bridge-modal-title" className="text-lg font-heading font-semibold text-dark-100 flex items-center gap-2">
             <RefreshCw className="w-5 h-5 text-primary-400" />
             Bridge USDC to Stacks
           </h2>
@@ -160,6 +166,7 @@ export function BridgeModal({
             onClick={handleClose}
             disabled={status === 'approving' || status === 'depositing'}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            aria-label="Close bridge modal"
           >
             <X className="w-5 h-5 text-dark-400" />
           </button>

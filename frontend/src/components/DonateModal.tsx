@@ -171,19 +171,26 @@ export function DonateModal({
       <div 
         className="absolute inset-0 bg-dark-900/80 backdrop-blur-md"
         onClick={handleClose}
+        aria-hidden="true"
       />
       
       {/* Modal */}
-      <div className="glass-card relative max-w-md w-full overflow-hidden animate-in">
+      <div
+        className="glass-card relative max-w-md w-full max-h-[90vh] overflow-y-auto animate-in"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="donate-modal-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-lg font-heading font-semibold text-dark-100">
+          <h2 id="donate-modal-title" className="text-lg font-heading font-semibold text-dark-100">
             {success ? 'Donation Successful!' : 'Donate with USDCx'}
           </h2>
           <button 
             onClick={handleClose}
             disabled={donating}
             className="p-2 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            aria-label="Close donation modal"
           >
             <X className="w-5 h-5 text-dark-400" />
           </button>
