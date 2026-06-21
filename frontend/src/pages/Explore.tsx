@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CampaignCard, type Campaign } from '../components/CampaignCard';
 import { CampaignCardSkeleton } from '../components/Skeleton';
-import { Search, Filter, Plus, RefreshCw } from 'lucide-react';
+import { Search, Filter, Plus, RefreshCw, ArrowUpDown } from 'lucide-react';
 import { CAMPAIGN_CATEGORIES } from '../lib/ipfs';
 import { getAllCampaigns, filterCampaigns, type FullCampaign } from '../lib/campaigns';
 
@@ -10,6 +10,7 @@ export function ExplorePage() {
   const [campaigns, setCampaigns] = useState<FullCampaign[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<string>('newest');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +39,25 @@ export function ExplorePage() {
     category: selectedCategory,
   });
 
+  // Sort campaigns
+  const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
+    switch (sortBy) {
+      case 'most-funded':
+        return b.raised - a.raised;
+      case 'ending-soon':
+        if (a.daysLeft <= 0 && b.daysLeft > 0) return 1;
+        if (b.daysLeft <= 0 && a.daysLeft > 0) return -1;
+        return a.daysLeft - b.daysLeft;
+      case 'most-endorsed':
+        return b.endorsements - a.endorsements;
+      case 'newest':
+      default:
+        return b.id - a.id;
+    }
+  });
+
   // Convert FullCampaign to Campaign for CampaignCard
-  const displayCampaigns: Campaign[] = filteredCampaigns.map(c => ({
+  const displayCampaigns: Campaign[] = sortedCampaigns.map(c => ({
     id: c.id,
     title: c.title,
     description: c.description,
@@ -84,6 +102,19 @@ export function ExplorePage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-500 pointer-events-none" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input py-2 pr-4 pl-9 text-sm appearance-none cursor-pointer"
+            >
+              <option value="newest">Newest</option>
+              <option value="most-funded">Most funded</option>
+              <option value="ending-soon">Ending soon</option>
+              <option value="most-endorsed">Most endorsed</option>
+            </select>
+          </div>
         </div>
       </div>
 
