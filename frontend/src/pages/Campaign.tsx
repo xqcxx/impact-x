@@ -379,7 +379,7 @@ export function CampaignPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-28 self-start">
           {/* Funding Card */}
           <div className="glass-card p-6 border-t-4 border-t-primary-500">
             {/* Amount Raised */}
