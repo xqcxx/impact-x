@@ -286,7 +286,7 @@ export function CampaignPage() {
                   <input
                     value={updateTitle}
                     onChange={(event) => setUpdateTitle(event.target.value.slice(0, 80))}
-                    className="input-field w-full"
+                    className="input w-full"
                     placeholder="New milestone reached"
                     maxLength={80}
                   />
@@ -296,7 +296,7 @@ export function CampaignPage() {
                   <textarea
                     value={updateBody}
                     onChange={(event) => setUpdateBody(event.target.value.slice(0, 1000))}
-                    className="input-field w-full min-h-32 resize-none"
+                    className="input w-full min-h-32 resize-none"
                     placeholder="Share what changed, what shipped, or what supporters should know."
                     maxLength={1000}
                   />
